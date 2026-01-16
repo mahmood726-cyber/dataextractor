@@ -1,0 +1,119 @@
+# Test files
+test_*.js
+run_tests.js
+*_test.js
+*.test.js
+*.spec.js
+
+# Validation and benchmark files
+validation_*.js
+benchmark_*.js
+comprehensive_*.js
+quick_validation.js
+diagnose_*.js
+analyze_*.js
+check_*.js
+
+# Development scripts
+fetch_*.js
+process_*.js
+augment_*.js
+debug_*.js
+regression_*.js
+zs_compare.py
+
+# Temporary and chunk files
+_temp*.js
+temp_*.js
+HF_chunk_*.txt
+*.chunk.txt
+
+# Backup directories
+backup_*/
+backups/
+*.backup.*
+*.bak
+
+# Data files
+*.json
+!package.json
+!package-lock.json
+*.txt
+*.docx
+*.html
+*.pdf
+
+# Output and results
+*_results.json
+*_output.json
+ours.json
+auto_gold*.json
+clean_auto*.json
+ctgov_*.js
+
+# Node modules (npm handles this, but explicit)
+node_modules/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Git files
+.git/
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Documentation build
+docs/
+_site/
+
+# Environment files
+.env
+.env.*
+*.env
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Build artifacts
+dist/
+build/
+out/
+
+# Lock files (optional - some prefer to include)
+# package-lock.json
+# yarn.lock
+
+# R packages additional validation
+r_packages_*.js
+run_validation_*.js
+
+# Smart split and reference utilities (dev only)
+smart_split_papers.js
+reference_based_splitter.js
+extraction_stats.js
+
+# Separated test files
+*_separated.js
+
+# DEVLOG and development notes
+DEVLOG.md
+TODO.md
+NOTES.md

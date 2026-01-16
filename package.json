@@ -1,0 +1,78 @@
+{
+  "name": "rctextractor",
+  "version": "4.9.5",
+  "description": "AI-enhanced extraction engine for randomized controlled trial (RCT) data from medical literature. Extracts effect measures, population data, outcomes, risk of bias, and GRADE assessments for systematic reviews and meta-analysis.",
+  "main": "index.js",
+  "types": "types.d.ts",
+  "bin": {
+    "rctextract": "./extract_cli.js",
+    "rct-pdf": "./pdf_extractor.js",
+    "rct-split": "./split_papers.js",
+    "rct-split-accurate": "./accurate_paper_splitter.js"
+  },
+  "scripts": {
+    "test": "node run_tests.js",
+    "extract": "node extract_cli.js",
+    "extract-pdf": "node pdf_extractor.js",
+    "split": "node split_papers.js",
+    "split-accurate": "node accurate_paper_splitter.js",
+    "validate": "node validation_v49.js",
+    "benchmark": "node benchmark_fields.js"
+  },
+  "keywords": [
+    "rct",
+    "randomized-controlled-trial",
+    "meta-analysis",
+    "systematic-review",
+    "clinical-trial",
+    "medical-research",
+    "data-extraction",
+    "evidence-synthesis",
+    "nlp",
+    "natural-language-processing",
+    "hazard-ratio",
+    "odds-ratio",
+    "relative-risk",
+    "confidence-interval",
+    "risk-of-bias",
+    "grade",
+    "cochrane",
+    "pdf-extraction",
+    "medical-nlp",
+    "clinical-data"
+  ],
+  "author": {
+    "name": "RCTExtractor Team"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rctextractor/rctextractor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rctextractor/rctextractor/issues"
+  },
+  "homepage": "https://github.com/rctextractor/rctextractor#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "index.js",
+    "RCTExtractor_v4_8_AI.js",
+    "RCTExtractor_v4_7.js",
+    "LocalAI.js",
+    "pdf_extractor.js",
+    "extract_cli.js",
+    "split_papers.js",
+    "accurate_paper_splitter.js",
+    "types.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {},
+  "peerDependencies": {},
+  "optionalDependencies": {}
+}

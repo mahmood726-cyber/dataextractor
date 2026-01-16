@@ -1,0 +1,1456 @@
+{
+  "metadata": {
+    "title": "R Package Datasets for RCT/Meta-Analysis Validation",
+    "description": "Comprehensive collection of datasets from R packages that can be used to validate the Dataextractor tool",
+    "created_date": "2026-01-16",
+    "total_packages": 6,
+    "total_datasets": 115
+  },
+  "packages": {
+    "metadat": {
+      "package_name": "metadat",
+      "description": "Comprehensive meta-analysis datasets for teaching and validating meta-analytic methods",
+      "cran_url": "https://cran.r-project.org/package=metadat",
+      "documentation_url": "https://wviechtb.github.io/metadat/",
+      "total_datasets": 93,
+      "datasets": [
+        {
+          "name": "dat.aloe2013",
+          "description": "Studies on the Association Between Supervision Quality and Various Outcomes in Social Workers",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.anand1999",
+          "description": "Studies on the Effectiveness of Oral Anticoagulants in Patients with Coronary Artery Disease",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.assink2016",
+          "description": "Studies on the Association between Recidivism and Mental Health",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.axfors2021",
+          "description": "Mortality Outcomes with Hydroxychloroquine and Chloroquine in COVID-19",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.bakdash2021",
+          "description": "Dataset on Situation Awareness and Task Performance Associations",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.baker2009",
+          "description": "Studies on Pharmacologic Treatments for Chronic Obstructive Pulmonary Disease",
+          "num_studies": 39,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["study", "year", "id", "treatment", "exac", "total"],
+          "treatments": 8,
+          "notes": "Network meta-analysis dataset with 28,217 total observations"
+        },
+        {
+          "name": "dat.bangertdrowns2004",
+          "description": "Studies on the Effectiveness of Writing-to-Learn Interventions",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.bartos2023",
+          "description": "Results of 350,757 Coin Flips to Examine Same-Side Bias",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.baskerville2012",
+          "description": "Studies on the Effectiveness of Practice Facilitation Interventions",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.bcg",
+          "description": "Studies on the Effectiveness of the BCG Vaccine Against Tuberculosis",
+          "num_studies": 13,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": true,
+          "variables": ["trial", "author", "year", "tpos", "tneg", "cpos", "cneg", "ablat", "alloc"],
+          "notes": "Classic dataset with geographic moderator (latitude). Alias: dat.colditz1994"
+        },
+        {
+          "name": "dat.begg1989",
+          "description": "Studies on Bone-Marrow Transplantation versus Chemotherapy for Leukemia",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.berkey1998",
+          "description": "Studies on Treatments for Periodontal Disease - Multivariate Meta-Analysis",
+          "num_studies": 5,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "notes": "Multivariate dataset with 2 correlated outcomes per study (k=10 total)"
+        },
+        {
+          "name": "dat.besson2016",
+          "description": "Dataset on How Maternal Diet Impacts Coping Styles in Rodents",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.bonett2010",
+          "description": "Studies on the Reliability of the CES-D Scale",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.bornmann2007",
+          "description": "Studies on Gender Differences in Grant and Fellowship Awards",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": true
+        },
+        {
+          "name": "dat.bourassa1996",
+          "description": "Studies on the Association between Handedness and Eye-Dominance",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.cannon2006",
+          "description": "Studies on Intensive Versus Moderate Statin Therapy for Preventing Coronary Events",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.cohen1981",
+          "description": "Studies on the Relationship between Course Instructor Ratings and Student Achievement",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.colditz1994",
+          "description": "Studies on the Effectiveness of the BCG Vaccine Against Tuberculosis",
+          "num_studies": 13,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": true,
+          "notes": "Alias for dat.bcg"
+        },
+        {
+          "name": "dat.collins1985a",
+          "description": "Studies on Treatment of Upper Gastrointestinal Bleeding by H2 Antagonist",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.collins1985b",
+          "description": "Studies on the Effects of Diuretics in Pregnancy",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.craft2003",
+          "description": "Studies on Competitive State Anxiety Inventory-2 and Sport Performance",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.crede2010",
+          "description": "Studies on the Relationship between Class Attendance and College Grades",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.crisafulli2020",
+          "description": "Duchenne Muscular Dystrophy (DMD) Prevalence Data",
+          "num_studies": null,
+          "data_type": "prevalence",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.curtis1998",
+          "description": "Studies on the Effects of Elevated CO2 Levels on Woody Plant Mass",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.dagostino1998",
+          "description": "Studies on Antihistamines in Reducing Common Cold Symptoms",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.damico2009",
+          "description": "Studies on Topical plus Systemic Antibiotics to Prevent Respiratory Tract Infections",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.debruin2009",
+          "description": "Studies on Standard Care Quality and HAART-Adherence",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.demir2022",
+          "description": "Studies on the Reliability of the MIBS Scale",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.dogliotti2014",
+          "description": "Studies on Antithrombotic Treatments to Prevent Strokes",
+          "num_studies": 20,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["study", "id", "treatment", "stroke", "total"],
+          "treatments": 8,
+          "total_participants": 79808,
+          "notes": "Network meta-analysis dataset comparing antithrombotic treatments"
+        },
+        {
+          "name": "dat.dong2013",
+          "description": "Studies on Safety of Inhaled Medications for COPD",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.dorn2007",
+          "description": "Studies on Complementary and Alternative Medicine for Irritable Bowel Syndrome",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.egger2001",
+          "description": "Studies on Intravenous Magnesium in Acute Myocardial Infarction",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.fine1993",
+          "description": "Studies on Radiation Therapy with or without Chemotherapy in Malignant Gliomas",
+          "num_studies": null,
+          "data_type": "survival",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.franchini2012",
+          "description": "Studies on Dopamine Agonists in Advanced Parkinson Disease",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "notes": "Network meta-analysis dataset"
+        },
+        {
+          "name": "dat.frank2008",
+          "description": "Studies on CASP8 Polymorphism and Breast Cancer Risk",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.furukawa2003",
+          "description": "Studies on Low Dosage Tricyclic Antidepressants for Depression",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.gibson2002",
+          "description": "Studies on Self-Management Education for Asthma",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.graves2010",
+          "description": "Studies on the Effectiveness of Injected Cholera Vaccines",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.gurusamy2011",
+          "description": "Studies on Interventions to Reduce Mortality after Liver Transplantation",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "notes": "Network meta-analysis dataset"
+        },
+        {
+          "name": "dat.hackshaw1998",
+          "description": "Studies on Lung Cancer Risk in Women Exposed to Environmental Tobacco Smoke",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": true
+        },
+        {
+          "name": "dat.hahn2001",
+          "description": "Studies on Different Rehydration Solutions for Prevention of IV Infusion in Children",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.hannum2020",
+          "description": "Studies Comparing Objective and Subjective Olfactory Loss in COVID-19",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.hart1999",
+          "description": "Studies on Warfarin for Preventing Strokes",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.hartmannboyce2018",
+          "description": "Studies on Nicotine Replacement Therapy for Smoking Cessation",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.hasselblad1998",
+          "description": "Studies on Counseling for Smoking Cessation",
+          "num_studies": 24,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["id", "study", "authors", "year", "trt", "xi", "ni"],
+          "treatments": 4,
+          "total_observations": 50,
+          "notes": "Network meta-analysis dataset with 4 treatment types"
+        },
+        {
+          "name": "dat.hine1989",
+          "description": "Studies on Prophylactic Use of Lidocaine After Heart Attack",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.ishak2007",
+          "description": "Studies on Deep-Brain Stimulation in Parkinson's Disease Patients",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.kalaian1996",
+          "description": "Studies on the Effectiveness of Coaching for the SAT",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.kearon1998",
+          "description": "Studies on Accuracy of Venous Ultrasonography for Deep Venous Thrombosis",
+          "num_studies": 30,
+          "data_type": "diagnostic",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": true,
+          "variables": ["id", "author", "year", "patients", "tp", "np", "tn", "nn"],
+          "notes": "Diagnostic accuracy meta-analysis dataset"
+        },
+        {
+          "name": "dat.knapp2017",
+          "description": "Studies on Planning Performance in Schizophrenia vs Healthy Controls",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.konstantopoulos2011",
+          "description": "Studies on Modified School Calendars and Student Achievement",
+          "num_studies": 56,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["district", "school", "study", "yi", "vi", "year"],
+          "notes": "Multilevel meta-analysis dataset with schools nested in 11 districts"
+        },
+        {
+          "name": "dat.landenberger2005",
+          "description": "Studies on CBT for Reducing Recidivism",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.laopaiboon2015",
+          "description": "Studies on Azithromycin for Lower Respiratory Tract Infections",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.lau1992",
+          "description": "Studies on Intravenous Streptokinase for Acute MI - Cumulative Meta-Analysis",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.lee2004",
+          "description": "Studies on Acupoint P6 Stimulation for Preventing Nausea",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.lehmann2018",
+          "description": "The Effect of Red on Perceived Attractiveness",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.li2007",
+          "description": "Studies on Intravenous Magnesium in Acute Myocardial Infarction",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.lim2014",
+          "description": "Studies on Maternal Size, Offspring Size, and Number of Offsprings",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.linde2005",
+          "description": "Studies on St. John's Wort for Treating Depression",
+          "num_studies": 26,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": 16,
+          "notes": "Double-blind placebo-controlled RCTs"
+        },
+        {
+          "name": "dat.linde2015",
+          "description": "Studies on Classes of Antidepressants for Primary Care",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "notes": "Network meta-analysis dataset"
+        },
+        {
+          "name": "dat.linde2016",
+          "description": "Studies on Antidepressants for Primary Care Setting",
+          "num_studies": 93,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": false,
+          "has_demographics": false,
+          "variables": ["id", "lnOR", "selnOR", "treat1", "treat2"],
+          "treatments": 22,
+          "notes": "Network meta-analysis dataset with log odds ratios"
+        },
+        {
+          "name": "dat.lopez2019",
+          "description": "Studies on CBT for Depression",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.maire2019",
+          "description": "Studies on Temporal Trends in Fish Community Structures in French Rivers",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.mccurdy2020",
+          "description": "Studies on the Generation Effect",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.mcdaniel1994",
+          "description": "Studies on the Validity of Employment Interviews",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.michael2013",
+          "description": "The Non-Persuasive Power of a Brain Image",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.molloy2014",
+          "description": "Studies on Conscientiousness and Medication Adherence",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.moura2021",
+          "description": "Studies on Assortative Mating",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.nakagawa2007",
+          "description": "Assessing the Function of House Sparrows' Bib Size",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.nielweise2007",
+          "description": "Studies on Anti-Infective-Treated Central Venous Catheters",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.nielweise2008",
+          "description": "Studies on Anti-Infective-Treated Central Venous Catheters (Updated)",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.normand1999",
+          "description": "Studies on Length of Hospital Stay of Stroke Patients",
+          "num_studies": 9,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["source", "n1i", "m1i", "sd1i", "n2i", "m2i", "sd2i"],
+          "total_participants": 1298,
+          "notes": "Raw means and standard deviations in days"
+        },
+        {
+          "name": "dat.obrien2003",
+          "description": "Studies on BMI and Risk of Preeclampsia",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.pagliaro1992",
+          "description": "Studies on Nonsurgical Treatments in Cirrhosis",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.pignon2000",
+          "description": "Studies on Chemotherapy for Head and Neck Squamous-Cell Carcinoma",
+          "num_studies": 65,
+          "data_type": "survival",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": false,
+          "has_demographics": false,
+          "variables": ["id", "trial", "OmE", "V", "grp"],
+          "notes": "Aggregate survival data (O-E and variance format)"
+        },
+        {
+          "name": "dat.pritz1997",
+          "description": "Studies on Hyperdynamic Therapy for Cerebral Vasospasm",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.raudenbush1985",
+          "description": "Studies on Teacher Expectations on Pupil IQ (Pygmalion Effect)",
+          "num_studies": 19,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["study", "author", "year", "weeks", "setting", "tester", "n1i", "n2i", "yi", "vi"],
+          "notes": "Classic educational meta-analysis dataset with moderators"
+        },
+        {
+          "name": "dat.riley2003",
+          "description": "Studies on MYC-N as a Prognostic Marker for Neuroblastoma",
+          "num_studies": 81,
+          "data_type": "survival",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": false,
+          "has_demographics": false,
+          "variables": ["study", "yi", "vi", "sei", "outcome"],
+          "notes": "Log hazard ratios for OS and DFS outcomes"
+        },
+        {
+          "name": "dat.roever2022",
+          "description": "Irinotecan / S-1 Toxicity Dataset",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.senn2013",
+          "description": "Studies on Glucose-Lowering Agents",
+          "num_studies": 26,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["author", "ni", "treatment", "comment", "mi", "sdi"],
+          "treatments": 10,
+          "total_arms": 53,
+          "notes": "Network meta-analysis dataset with means and SDs"
+        },
+        {
+          "name": "dat.spooner2002",
+          "description": "Studies on Nedocromil Sodium for Exercise-Induced Bronchoconstriction",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.stowe2010",
+          "description": "Studies on Adjuvant Treatments to Levodopa for Parkinson Disease",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.tannersmith2016",
+          "description": "Studies on School Motivation and Criminal Behavior",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.ursino2021",
+          "description": "Sorafenib Toxicity Dataset",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.vanhowe1999",
+          "description": "Studies on Circumcision and HIV Infection",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.viechtbauer2021",
+          "description": "Studies to Illustrate Model Checking Methods",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.white2020",
+          "description": "Studies on Sexual Signal Expression and Individual Quality",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.woods2010",
+          "description": "Studies on Treatments for Chronic Obstructive Pulmonary Disease",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "dat.yusuf1985",
+          "description": "Studies of Beta Blockers During and After Myocardial Infarction",
+          "num_studies": 21,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["table", "id", "trial", "ai", "n1i", "ci", "n2i"],
+          "notes": "Classic Peto one-step method dataset with multiple tables"
+        }
+      ]
+    },
+    "netmeta": {
+      "package_name": "netmeta",
+      "description": "Network meta-analysis using frequentist methods with built-in example datasets",
+      "cran_url": "https://cran.r-project.org/package=netmeta",
+      "github_url": "https://github.com/guido-s/netmeta",
+      "total_datasets": 9,
+      "datasets": [
+        {
+          "name": "Baker2009",
+          "description": "Network meta-analysis of pharmacologic treatments for chronic obstructive pulmonary disease",
+          "num_studies": 39,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "treatments": 8,
+          "notes": "Identical to dat.baker2009 in metadat package"
+        },
+        {
+          "name": "dietaryfat",
+          "description": "Network meta-analysis comparing effects of two diets on mortality",
+          "num_studies": null,
+          "data_type": "rate",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "notes": "Rates given as number of deaths and person-years"
+        },
+        {
+          "name": "Dogliotti2014",
+          "description": "Network meta-analysis of antithrombotic treatments to prevent strokes",
+          "num_studies": 20,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "total_participants": 79808,
+          "treatments": 8
+        },
+        {
+          "name": "Dong2013",
+          "description": "Network meta-analysis for chronic obstructive pulmonary disease safety",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "Franchini2012",
+          "description": "Network meta-analysis of dopamine agonist treatments for Parkinson's disease",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["y1", "y2", "y3", "sd1", "sd2", "sd3", "n1", "n2", "n3"],
+          "notes": "Mean lost work-time reduction data"
+        },
+        {
+          "name": "Gurusamy2011",
+          "description": "Network meta-analysis on blood loss during liver transplantation",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "Linde2015",
+          "description": "Network meta-analysis of treatments for depression",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "Linde2016",
+          "description": "Network meta-analysis of primary care depression treatments",
+          "num_studies": 93,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": false,
+          "has_demographics": false,
+          "treatments": 22,
+          "notes": "Contrast-based format with log odds ratios"
+        },
+        {
+          "name": "smokingcessation",
+          "description": "Network meta-analysis of smoking cessation interventions",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["event1", "event2", "event3", "n1", "n2", "n3", "treat1", "treat2", "treat3"]
+        }
+      ]
+    },
+    "meta": {
+      "package_name": "meta",
+      "description": "General package for meta-analysis providing standard methods",
+      "cran_url": "https://cran.r-project.org/package=meta",
+      "total_datasets": 7,
+      "datasets": [
+        {
+          "name": "amlodipine",
+          "description": "Amlodipine for Work Capacity",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "caffeine",
+          "description": "Caffeine for daytime drowsiness",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "cisapride",
+          "description": "Cisapride in Non-Ulcer Dyspepsia",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "Fleiss1993bin",
+          "description": "Aspirin after Myocardial Infarction - Binary outcomes",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["study", "year", "d.asp", "n.asp", "d.plac", "n.plac"]
+        },
+        {
+          "name": "Fleiss1993cont",
+          "description": "Mental Health Treatment - Continuous outcomes",
+          "num_studies": null,
+          "data_type": "continuous",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "Olkin1995",
+          "description": "Thrombolytic Therapy after Acute Myocardial Infarction",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["author", "year", "ev.exp", "n.exp", "ev.cont", "n.cont"]
+        },
+        {
+          "name": "Pagliaro1992",
+          "description": "Meta-analysis on Prevention of First Bleeding in Cirrhosis",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        }
+      ]
+    },
+    "mada": {
+      "package_name": "mada",
+      "description": "Meta-Analysis of Diagnostic Accuracy with bivariate models",
+      "cran_url": "https://cran.r-project.org/package=mada",
+      "documentation_url": "https://r-forge.r-project.org/projects/mada",
+      "total_datasets": 6,
+      "datasets": [
+        {
+          "name": "AuditC",
+          "description": "Diagnostic accuracy data for AUDIT-C alcohol screening test",
+          "num_studies": null,
+          "data_type": "diagnostic",
+          "has_effect_sizes": false,
+          "has_confidence_intervals": false,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["TP", "FN", "FP", "TN"],
+          "source": "Kriston et al. (2008)",
+          "notes": "2x2 contingency table format"
+        },
+        {
+          "name": "Dementia",
+          "description": "Diagnostic accuracy data for dementia screening",
+          "num_studies": null,
+          "data_type": "diagnostic",
+          "has_effect_sizes": false,
+          "has_confidence_intervals": false,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["TP", "FN", "FP", "TN"],
+          "source": "Mitchell (2009)"
+        },
+        {
+          "name": "IAQ",
+          "description": "Interviewer-Administered Questionnaire data for smoking detection",
+          "num_studies": null,
+          "data_type": "diagnostic",
+          "has_effect_sizes": false,
+          "has_confidence_intervals": false,
+          "has_sample_sizes": true,
+          "has_demographics": true,
+          "variables": ["TP", "FN", "FP", "TN", "type", "author", "study_id", "result_id", "population"],
+          "source": "Patrick et al. (1994)"
+        },
+        {
+          "name": "SAQ",
+          "description": "Self-Administered Questionnaire data for smoking detection",
+          "num_studies": null,
+          "data_type": "diagnostic",
+          "has_effect_sizes": false,
+          "has_confidence_intervals": false,
+          "has_sample_sizes": true,
+          "has_demographics": true,
+          "variables": ["TP", "FN", "FP", "TN", "type", "author", "study_id", "result_id", "population"],
+          "source": "Patrick et al. (1994)"
+        },
+        {
+          "name": "skin_tests",
+          "description": "Diagnostic accuracy of skin tests for penicillin allergy",
+          "num_studies": null,
+          "data_type": "diagnostic",
+          "has_effect_sizes": false,
+          "has_confidence_intervals": false,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "variables": ["TP", "FN", "FP", "TN"],
+          "source": "Sousa-Pinto et al. (2021)"
+        },
+        {
+          "name": "smoking",
+          "description": "Combined IAQ and SAQ data for smoking detection diagnostics",
+          "num_studies": null,
+          "data_type": "diagnostic",
+          "has_effect_sizes": false,
+          "has_confidence_intervals": false,
+          "has_sample_sizes": true,
+          "has_demographics": true,
+          "variables": ["TP", "FN", "FP", "TN", "type", "author", "study_id", "result_id", "population"],
+          "source": "Patrick et al. (1994)",
+          "notes": "Combines IAQ and SAQ datasets"
+        }
+      ]
+    },
+    "robvis": {
+      "package_name": "robvis",
+      "description": "Risk-of-bias visualization package with example assessment datasets",
+      "cran_url": "https://cran.r-project.org/package=robvis",
+      "github_url": "https://github.com/mcguinlu/robvis",
+      "web_app": "https://www.riskofbias.info",
+      "total_datasets": 4,
+      "datasets": [
+        {
+          "name": "data_rob1",
+          "description": "Example ROB1 (original Cochrane risk of bias) assessment",
+          "num_studies": null,
+          "data_type": "risk_of_bias",
+          "has_effect_sizes": false,
+          "has_confidence_intervals": false,
+          "has_sample_sizes": false,
+          "has_demographics": false,
+          "tool": "ROB1"
+        },
+        {
+          "name": "data_rob2",
+          "description": "Example ROB2.0 assessment for randomized controlled trials",
+          "num_studies": null,
+          "data_type": "risk_of_bias",
+          "has_effect_sizes": false,
+          "has_confidence_intervals": false,
+          "has_sample_sizes": false,
+          "has_demographics": false,
+          "tool": "ROB2"
+        },
+        {
+          "name": "data_robins",
+          "description": "Example ROBINS-I assessment for non-randomized intervention studies",
+          "num_studies": null,
+          "data_type": "risk_of_bias",
+          "has_effect_sizes": false,
+          "has_confidence_intervals": false,
+          "has_sample_sizes": false,
+          "has_demographics": false,
+          "tool": "ROBINS-I"
+        },
+        {
+          "name": "data_quadas",
+          "description": "Example QUADAS-2 assessment for diagnostic accuracy studies",
+          "num_studies": null,
+          "data_type": "risk_of_bias",
+          "has_effect_sizes": false,
+          "has_confidence_intervals": false,
+          "has_sample_sizes": false,
+          "has_demographics": false,
+          "tool": "QUADAS-2"
+        }
+      ]
+    },
+    "rmeta": {
+      "package_name": "rmeta",
+      "description": "Classic meta-analysis functions for two-sample comparisons",
+      "cran_url": "https://cran.r-project.org/package=rmeta",
+      "total_datasets": 2,
+      "datasets": [
+        {
+          "name": "catheter",
+          "description": "Meta-analysis of antibacterial catheter coating",
+          "num_studies": null,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false
+        },
+        {
+          "name": "cochrane",
+          "description": "Data for Cochrane Collaboration logo",
+          "num_studies": 7,
+          "data_type": "binary",
+          "has_effect_sizes": true,
+          "has_confidence_intervals": true,
+          "has_sample_sizes": true,
+          "has_demographics": false,
+          "notes": "Classic visual representation dataset"
+        }
+      ]
+    }
+  },
+  "summary_by_data_type": {
+    "binary": {
+      "description": "Binary outcome data (events/non-events in 2x2 tables)",
+      "count": 65,
+      "example_datasets": ["dat.bcg", "dat.baker2009", "Fleiss1993bin", "Olkin1995"]
+    },
+    "continuous": {
+      "description": "Continuous outcome data (means, SDs)",
+      "count": 30,
+      "example_datasets": ["dat.normand1999", "dat.senn2013", "dat.raudenbush1985", "Fleiss1993cont"]
+    },
+    "survival": {
+      "description": "Time-to-event/survival outcome data (hazard ratios)",
+      "count": 3,
+      "example_datasets": ["dat.riley2003", "dat.pignon2000", "dat.fine1993"]
+    },
+    "diagnostic": {
+      "description": "Diagnostic accuracy data (TP, FP, TN, FN)",
+      "count": 7,
+      "example_datasets": ["AuditC", "Dementia", "dat.kearon1998"]
+    },
+    "risk_of_bias": {
+      "description": "Risk of bias assessment data",
+      "count": 4,
+      "example_datasets": ["data_rob2", "data_robins", "data_quadas"]
+    },
+    "network_meta_analysis": {
+      "description": "Multi-arm trials suitable for network meta-analysis",
+      "count": 15,
+      "example_datasets": ["dat.hasselblad1998", "dat.linde2016", "Baker2009", "smokingcessation"]
+    }
+  },
+  "recommended_for_validation": {
+    "description": "Datasets recommended for Dataextractor validation based on completeness and documentation",
+    "binary_outcomes": [
+      {
+        "dataset": "dat.bcg",
+        "package": "metadat",
+        "reason": "Classic dataset with 13 studies, complete 2x2 tables, moderators"
+      },
+      {
+        "dataset": "dat.baker2009",
+        "package": "metadat",
+        "reason": "Large NMA dataset with 39 studies, 8 treatments"
+      },
+      {
+        "dataset": "dat.yusuf1985",
+        "package": "metadat",
+        "reason": "Multi-table dataset demonstrating Peto method"
+      },
+      {
+        "dataset": "Fleiss1993bin",
+        "package": "meta",
+        "reason": "Standard binary meta-analysis example"
+      }
+    ],
+    "continuous_outcomes": [
+      {
+        "dataset": "dat.normand1999",
+        "package": "metadat",
+        "reason": "9 studies with raw means and SDs"
+      },
+      {
+        "dataset": "dat.raudenbush1985",
+        "package": "metadat",
+        "reason": "19 studies with effect sizes and moderators"
+      },
+      {
+        "dataset": "dat.senn2013",
+        "package": "metadat",
+        "reason": "26-study NMA with continuous outcomes"
+      }
+    ],
+    "survival_outcomes": [
+      {
+        "dataset": "dat.riley2003",
+        "package": "metadat",
+        "reason": "81 studies with log hazard ratios"
+      },
+      {
+        "dataset": "dat.pignon2000",
+        "package": "metadat",
+        "reason": "65 trials with O-E format"
+      }
+    ],
+    "diagnostic_accuracy": [
+      {
+        "dataset": "dat.kearon1998",
+        "package": "metadat",
+        "reason": "30 studies with complete DTA data"
+      },
+      {
+        "dataset": "AuditC",
+        "package": "mada",
+        "reason": "Standard DTA format with TP/FP/TN/FN"
+      }
+    ],
+    "network_meta_analysis": [
+      {
+        "dataset": "dat.hasselblad1998",
+        "package": "metadat",
+        "reason": "24 studies, 4 treatments, well-documented"
+      },
+      {
+        "dataset": "dat.linde2016",
+        "package": "metadat",
+        "reason": "93 studies, 22 treatments, comprehensive"
+      },
+      {
+        "dataset": "smokingcessation",
+        "package": "netmeta",
+        "reason": "Standard NMA example with multi-arm format"
+      }
+    ]
+  },
+  "installation_commands": {
+    "r_code": [
+      "install.packages('metadat')",
+      "install.packages('netmeta')",
+      "install.packages('meta')",
+      "install.packages('mada')",
+      "install.packages('robvis')",
+      "install.packages('rmeta')"
+    ],
+    "load_example": [
+      "library(metadat)",
+      "data(dat.bcg)",
+      "head(dat.bcg)"
+    ]
+  },
+  "sources": [
+    "https://cran.r-project.org/web/packages/metadat/",
+    "https://wviechtb.github.io/metadat/",
+    "https://cran.r-project.org/web/packages/netmeta/",
+    "https://cran.r-project.org/web/packages/meta/",
+    "https://cran.r-project.org/web/packages/mada/",
+    "https://cran.r-project.org/web/packages/robvis/",
+    "https://cran.r-project.org/web/packages/rmeta/"
+  ]
+}

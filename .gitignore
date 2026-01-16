@@ -1,0 +1,97 @@
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory
+coverage/
+.nyc_output/
+
+# Build outputs
+dist/
+build/
+out/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Backup directories
+backup_*/
+
+# Temporary files
+_temp*.js
+*.tmp
+*.temp
+
+# PDF files (except examples)
+*.pdf
+!examples/*.pdf
+!CD005351.pdf
+
+# Large data files (generated)
+ctgov_*.json
+validation_*.js
+!validation_v49.js
+
+# Split output directories
+split_out/
+split_out_strict/
+split_out_strict2/
+split_out_strict3/
+split_out_strict4/
+split_papers/
+separated_papers/
+
+# Generated summaries
+split_summary*.json
+split_summary*.csv
+
+# Chunk files
+HF_chunk_*.txt
+
+# Test screenshots
+selenium_*.png
+
+# Large validation result files
+validation_results_*.json
+
+# R package test outputs
+r_package_datasets.json
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Yarn Integrity file
+.yarn-integrity
