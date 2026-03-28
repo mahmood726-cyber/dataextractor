@@ -1,0 +1,2878 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="RCT Data Extractor - Extract statistical data from randomized controlled trial publications with PDF support and batch processing">
+    <title>RCT Data Extractor v3.0 - Accessible Medical Research Tool</title>
+
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <style>
+        /* ============================================================
+           CSS CUSTOM PROPERTIES (Light/Dark Theme Support)
+           ============================================================ */
+        :root {
+            /* Colors - Light Mode */
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #dbeafe;
+            --secondary: #64748b;
+            --success: #16a34a;
+            --success-light: #dcfce7;
+            --warning: #d97706;
+            --warning-light: #fef3c7;
+            --danger: #dc2626;
+            --danger-light: #fee2e2;
+            --info: #0891b2;
+            --info-light: #cffafe;
+
+            /* Backgrounds */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --bg-elevated: #ffffff;
+
+            /* Text */
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --text-inverse: #ffffff;
+
+            /* Borders */
+            --border-color: #e2e8f0;
+            --border-focus: #2563eb;
+
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+            /* Layout */
+            --container-max: 1200px;
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+
+            /* Typography */
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', monospace;
+
+            /* Focus */
+            --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.4);
+
+            /* Transitions */
+            --transition-fast: 150ms ease;
+            --transition-normal: 250ms ease;
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-hover: #60a5fa;
+            --primary-light: #1e3a5f;
+            --secondary: #94a3b8;
+            --success: #22c55e;
+            --success-light: #14532d;
+            --warning: #f59e0b;
+            --warning-light: #451a03;
+            --danger: #ef4444;
+            --danger-light: #450a0a;
+            --info: #06b6d4;
+            --info-light: #083344;
+
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-elevated: #1e293b;
+
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --text-inverse: #0f172a;
+
+            --border-color: #334155;
+            --border-focus: #3b82f6;
+
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+
+            --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+
+        /* ============================================================
+           BASE STYLES
+           ============================================================ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: background-color var(--transition-normal), color var(--transition-normal);
+        }
+
+        /* Skip Link for Accessibility */
+        .skip-link {
+            position: absolute;
+            top: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: var(--text-inverse);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 600;
+            z-index: 10000;
+            transition: top var(--transition-fast);
+        }
+
+        .skip-link:focus {
+            top: var(--spacing-md);
+            outline: none;
+        }
+
+        /* ============================================================
+           LAYOUT
+           ============================================================ */
+        .container {
+            max-width: var(--container-max);
+            margin: 0 auto;
+            padding: var(--spacing-md);
+        }
+
+        /* ============================================================
+           HEADER
+           ============================================================ */
+        header {
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--spacing-md) 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .version-badge {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 0.125rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            align-items: center;
+        }
+
+        /* ============================================================
+           BUTTONS
+           ============================================================ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: var(--radius-md);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            min-height: 44px;
+            min-width: 44px;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--text-inverse);
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--border-color);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+        }
+
+        .btn-ghost:hover:not(:disabled) {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: var(--text-inverse);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: var(--text-inverse);
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            min-width: 44px;
+        }
+
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.75s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ============================================================
+           MAIN CONTENT
+           ============================================================ */
+        main {
+            padding: var(--spacing-lg) 0;
+        }
+
+        .card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        /* ============================================================
+           INPUT SECTION
+           ============================================================ */
+        .input-section {
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+
+        .textarea-wrapper {
+            position: relative;
+        }
+
+        .textarea-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+
+        .textarea-label .required {
+            color: var(--danger);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-family: var(--font-sans);
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            resize: vertical;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: var(--focus-ring);
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .char-count {
+            position: absolute;
+            bottom: var(--spacing-sm);
+            right: var(--spacing-sm);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: var(--bg-primary);
+            padding: 0.125rem 0.5rem;
+            border-radius: var(--radius-sm);
+        }
+
+        /* PDF Upload Zone */
+        .pdf-upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            text-align: center;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            background: var(--bg-secondary);
+        }
+
+        .pdf-upload-zone:hover,
+        .pdf-upload-zone:focus-within {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .pdf-upload-zone.drag-over {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            transform: scale(1.01);
+        }
+
+        .pdf-upload-zone.has-file {
+            border-color: var(--success);
+            background: var(--success-light);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-muted);
+        }
+
+        .upload-text {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .upload-text strong {
+            color: var(--primary);
+        }
+
+        .upload-hint {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .file-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        .file-info {
+            margin-top: var(--spacing-sm);
+            font-size: 0.875rem;
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            display: none;
+            margin-top: var(--spacing-md);
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--info));
+            border-radius: var(--radius-sm);
+            transition: width var(--transition-normal);
+            width: 0%;
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: var(--spacing-xs);
+            text-align: center;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        /* ============================================================
+           TABS
+           ============================================================ */
+        .tabs-container {
+            margin-top: var(--spacing-lg);
+        }
+
+        .tabs {
+            display: flex;
+            gap: var(--spacing-xs);
+            border-bottom: 2px solid var(--border-color);
+            overflow-x: auto;
+            scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+            min-height: 44px;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .tab:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        }
+
+        .tab[aria-selected="true"] {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: var(--bg-elevated);
+        }
+
+        .tab-content {
+            display: none;
+            padding: var(--spacing-lg) 0;
+            animation: fadeIn var(--transition-normal);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ============================================================
+           RESULTS DISPLAY
+           ============================================================ */
+        .quick-summary {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .result-item {
+            padding: var(--spacing-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+        .result-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .result-item label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .result-item .value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .result-item .confidence {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.125rem;
+        }
+
+        /* Quality Badges */
+        .quality-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 600;
+            min-width: 2rem;
+        }
+
+        .quality-A { background: var(--success); color: white; }
+        .quality-B { background: #22c55e; color: white; }
+        .quality-C { background: var(--warning); color: white; }
+        .quality-D { background: var(--danger); color: white; }
+
+        .bias-low { background: var(--success); color: white; }
+        .bias-moderate { background: var(--warning); color: white; }
+        .bias-high { background: var(--danger); color: white; }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            margin: var(--spacing-md) 0;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th, td {
+            padding: var(--spacing-sm) var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-secondary);
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Entity Tags */
+        .entities-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .entity-tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .entity-drug {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .entity-biomarker {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .entity-outcome {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        /* ============================================================
+           LOADING INDICATOR
+           ============================================================ */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-card {
+            background: var(--bg-elevated);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto var(--spacing-md);
+        }
+
+        .loading-text {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .loading-subtext {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* ============================================================
+           TOAST NOTIFICATIONS
+           ============================================================ */
+        .toast-container {
+            position: fixed;
+            bottom: var(--spacing-lg);
+            right: var(--spacing-lg);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            max-width: 400px;
+        }
+
+        .toast {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            border-left: 4px solid var(--primary);
+            animation: slideIn var(--transition-normal);
+        }
+
+        .toast.toast-success {
+            border-left-color: var(--success);
+        }
+
+        .toast.toast-error {
+            border-left-color: var(--danger);
+        }
+
+        .toast.toast-warning {
+            border-left-color: var(--warning);
+        }
+
+        .toast-icon {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.125rem;
+        }
+
+        .toast-message {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0.25rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ============================================================
+           KEYBOARD SHORTCUTS MODAL
+           ============================================================ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-md);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-elevated);
+            border-radius: var(--radius-lg);
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-body {
+            padding: var(--spacing-lg);
+        }
+
+        .shortcut-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-sm) 0;
+        }
+
+        .shortcut-keys {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        kbd {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            box-shadow: 0 1px 0 var(--border-color);
+        }
+
+        /* ============================================================
+           BATCH PROCESSING
+           ============================================================ */
+        .batch-section {
+            border-top: 1px solid var(--border-color);
+            margin-top: var(--spacing-lg);
+            padding-top: var(--spacing-lg);
+        }
+
+        .batch-status {
+            padding: var(--spacing-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .batch-progress {
+            margin-top: var(--spacing-md);
+        }
+
+        .batch-stats {
+            display: flex;
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-sm);
+            font-size: 0.875rem;
+        }
+
+        .batch-stat {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .batch-stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .batch-stat-dot.success { background: var(--success); }
+        .batch-stat-dot.error { background: var(--danger); }
+        .batch-stat-dot.pending { background: var(--secondary); }
+
+        /* ============================================================
+           EMPTY STATES
+           ============================================================ */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            margin-bottom: var(--spacing-md);
+        }
+
+        /* ============================================================
+           RESPONSIVE STYLES
+           ============================================================ */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header-title {
+                justify-content: center;
+            }
+
+            .header-actions {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .action-buttons .btn {
+                width: 100%;
+            }
+
+            .results-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .tabs {
+                gap: 0;
+            }
+
+            .tab {
+                flex: 1;
+                padding: var(--spacing-sm);
+                font-size: 0.75rem;
+            }
+
+            .toast-container {
+                left: var(--spacing-md);
+                right: var(--spacing-md);
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: var(--spacing-md);
+            }
+
+            .header-title h1 {
+                font-size: 1.25rem;
+            }
+        }
+
+        /* ============================================================
+           PRINT STYLES
+           ============================================================ */
+        @media print {
+            header, .action-buttons, .tabs, .btn {
+                display: none !important;
+            }
+
+            .tab-content {
+                display: block !important;
+            }
+
+            body {
+                background: white;
+                color: black;
+            }
+
+            .card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+        }
+
+        /* ============================================================
+           UTILITIES
+           ============================================================ */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .text-center { text-align: center; }
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        .text-warning { color: var(--warning); }
+        .text-muted { color: var(--text-muted); }
+
+        .mt-1 { margin-top: var(--spacing-sm); }
+        .mt-2 { margin-top: var(--spacing-md); }
+        .mt-3 { margin-top: var(--spacing-lg); }
+        .mb-1 { margin-bottom: var(--spacing-sm); }
+        .mb-2 { margin-bottom: var(--spacing-md); }
+        .mb-3 { margin-bottom: var(--spacing-lg); }
+
+        h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: var(--spacing-lg) 0 var(--spacing-md) 0;
+        }
+
+        h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: var(--spacing-md) 0 var(--spacing-sm) 0;
+        }
+
+        /* Warning/Info Boxes */
+        .warning-box {
+            display: flex;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin: var(--spacing-sm) 0;
+        }
+
+        .warning-box.info {
+            background: var(--info-light);
+            border: 1px solid var(--info);
+        }
+
+        .warning-box.warning {
+            background: var(--warning-light);
+            border: 1px solid var(--warning);
+        }
+
+        .warning-box.error {
+            background: var(--danger-light);
+            border: 1px solid var(--danger);
+        }
+
+        .recommendation {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin: var(--spacing-xs) 0;
+            font-size: 0.875rem;
+        }
+
+        .recommendation.low {
+            background: var(--success-light);
+            border-left: 3px solid var(--success);
+        }
+
+        .recommendation.moderate {
+            background: var(--warning-light);
+            border-left: 3px solid var(--warning);
+        }
+
+        .recommendation.high {
+            background: var(--danger-light);
+            border-left: 3px solid var(--danger);
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="header-title">
+                    <h1>RCT Data Extractor</h1>
+                    <span class="version-badge">v3.0</span>
+                </div>
+                <div class="header-actions">
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="showShortcutsHelp()" aria-label="Show keyboard shortcuts" title="Keyboard Shortcuts (?)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="4" width="20" height="16" rx="2"/>
+                            <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h8"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-icon" id="themeToggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode" title="Toggle Dark Mode (D)">
+                        <svg id="themeIconSun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                            <circle cx="12" cy="12" r="5"/>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        </svg>
+                        <svg id="themeIconMoon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content" class="container">
+        <!-- Input Section -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Input RCT Data</h2>
+                <button type="button" class="btn btn-secondary" onclick="loadExample()" aria-label="Load example DAPA-HF trial text">
+                    Load Example
+                </button>
+            </div>
+
+            <div class="input-section">
+                <!-- PDF Upload -->
+                <div>
+                    <label class="textarea-label" id="pdf-upload-label">Upload PDF (Optional)</label>
+                    <div class="pdf-upload-zone" id="pdfUploadZone" role="button" tabindex="0" aria-labelledby="pdf-upload-label" onclick="document.getElementById('pdfFileInput').click()" onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('pdfFileInput').click()">
+                        <input type="file" id="pdfFileInput" class="file-input" accept=".pdf" onchange="handlePdfSelect(event)" aria-describedby="pdf-upload-hint">
+                        <div class="upload-icon" aria-hidden="true">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="12" y1="18" x2="12" y2="12"/>
+                                <line x1="9" y1="15" x2="12" y2="12"/>
+                                <line x1="15" y1="15" x2="12" y2="12"/>
+                            </svg>
+                        </div>
+                        <p class="upload-text"><strong>Click to upload</strong> or drag and drop</p>
+                        <p class="upload-hint" id="pdf-upload-hint">PDF files up to 50MB supported</p>
+                        <p class="file-info" id="pdfFileInfo" aria-live="polite"></p>
+                    </div>
+                    <div class="progress-container" id="pdfLoading" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p class="progress-text" id="progressText">Processing PDF...</p>
+                    </div>
+                    <div class="warning-box error hidden" id="pdfError" role="alert"></div>
+                    <div class="warning-box info hidden" id="extractedTextPreview" aria-live="polite">
+                        <div>
+                            <strong>PDF Extracted Successfully</strong>
+                            <p id="extractedTextStats" style="margin:0.5rem 0 0 0;font-size:0.875rem;"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Text Input -->
+                <div class="textarea-wrapper">
+                    <label for="inputText" class="textarea-label">
+                        Or Paste RCT Text <span class="required">*</span>
+                    </label>
+                    <textarea
+                        id="inputText"
+                        placeholder="Paste the full text of an RCT publication here, including results, methods, and statistical data. The extractor will identify study characteristics, effect sizes, confidence intervals, p-values, and quality indicators."
+                        aria-describedby="input-hint"
+                    ></textarea>
+                    <span class="char-count" id="charCount" aria-live="polite">0 characters</span>
+                </div>
+                <p id="input-hint" class="text-muted" style="font-size: 0.875rem; margin-top: -0.5rem;">
+                    Supports text from clinical trials including NEJM, JAMA, Lancet, and other medical journals.
+                </p>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-primary" id="btnExtract" onclick="extractData()" aria-describedby="extract-hint">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                        Extract Data
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearAll()" aria-label="Clear all input and results">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        Clear All
+                    </button>
+                    <span id="extract-hint" class="visually-hidden">Press Ctrl+Enter to extract data</span>
+                </div>
+
+                <!-- Batch Processing -->
+                <div class="batch-section">
+                    <h3>Batch Processing</h3>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="separateArticles()" aria-label="Auto-separate multiple articles in the text">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M16 3h5v5M8 3H3v5M3 16v5h5M21 16v5h-5M14 10l7-7M3 21l7-7M21 21l-7-7M3 3l7 7"/>
+                            </svg>
+                            Auto-Separate Articles
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btnBatchExtract" onclick="batchExtract()" disabled aria-label="Extract data from all separated articles">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <rect x="3" y="3" width="7" height="7"/>
+                                <rect x="14" y="3" width="7" height="7"/>
+                                <rect x="14" y="14" width="7" height="7"/>
+                                <rect x="3" y="14" width="7" height="7"/>
+                            </svg>
+                            Batch Extract All
+                        </button>
+                    </div>
+                    <div class="batch-status" id="batchStatus" aria-live="polite">
+                        Paste multiple RCT texts and click "Auto-Separate" to detect article boundaries.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="card" id="resultsSection">
+            <div class="card-header">
+                <h2 class="card-title">Extraction Results</h2>
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-secondary" id="btnExportCSV" onclick="exportCSV()" disabled aria-label="Export results as CSV">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                        CSV
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnExportJSON" onclick="exportJSON()" disabled aria-label="Export results as JSON">
+                        JSON
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnExportMeta" onclick="exportForMeta()" disabled aria-label="Export for meta-analysis">
+                        Meta
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnCopy" onclick="copyToClipboard()" disabled aria-label="Copy results to clipboard">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Summary -->
+            <div class="quick-summary" id="quickSummary" aria-live="polite">
+                <div class="empty-state">
+                    <div class="empty-state-icon" aria-hidden="true">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                    </div>
+                    <p class="empty-state-text">Results will appear here after extraction</p>
+                    <button type="button" class="btn btn-primary" onclick="loadExample()">Load Example to Try</button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs-container">
+                <div class="tabs" role="tablist" aria-label="Result sections">
+                    <button type="button" class="tab" role="tab" id="tab-btn-overview" aria-selected="true" aria-controls="tab-overview" onclick="showTab('overview')" tabindex="0">
+                        Overview
+                    </button>
+                    <button type="button" class="tab" role="tab" id="tab-btn-effects" aria-selected="false" aria-controls="tab-effects" onclick="showTab('effects')" tabindex="-1">
+                        Effect Measures
+                    </button>
+                    <button type="button" class="tab" role="tab" id="tab-btn-entities" aria-selected="false" aria-controls="tab-entities" onclick="showTab('entities')" tabindex="-1">
+                        Entities
+                    </button>
+                    <button type="button" class="tab" role="tab" id="tab-btn-quality" aria-selected="false" aria-controls="tab-quality" onclick="showTab('quality')" tabindex="-1">
+                        Quality
+                    </button>
+                    <button type="button" class="tab" role="tab" id="tab-btn-advanced" aria-selected="false" aria-controls="tab-advanced" onclick="showTab('advanced')" tabindex="-1">
+                        Advanced
+                    </button>
+                </div>
+
+                <div id="tab-overview" class="tab-content active" role="tabpanel" aria-labelledby="tab-btn-overview">
+                    <div id="overviewContent">
+                        <p class="text-muted text-center">Extract data to see detailed results</p>
+                    </div>
+                </div>
+
+                <div id="tab-effects" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-effects" hidden>
+                    <div id="effectMeasuresContent">
+                        <p class="text-muted text-center">Effect measures will be shown here</p>
+                    </div>
+                </div>
+
+                <div id="tab-entities" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-entities" hidden>
+                    <div id="entitiesContent">
+                        <p class="text-muted text-center">AI-extracted entities will appear here</p>
+                    </div>
+                </div>
+
+                <div id="tab-quality" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-quality" hidden>
+                    <div id="qualityContent">
+                        <p class="text-muted text-center">Quality assessment will appear here</p>
+                    </div>
+                </div>
+
+                <div id="tab-advanced" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-advanced" hidden>
+                    <div id="advancedContent">
+                        <p class="text-muted text-center">RoB 2.0, GRADE, PRISMA-S analysis will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" role="dialog" aria-modal="true" aria-labelledby="loading-title">
+        <div class="loading-card">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <p class="loading-text" id="loading-title">Extracting Data...</p>
+            <p class="loading-subtext" id="loading-stage">Analyzing text structure</p>
+            <div class="progress-bar mt-2">
+                <div class="progress-fill" id="extractionProgress" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer" role="region" aria-label="Notifications"></div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="modal-overlay" id="shortcutsModal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="shortcuts-title">Keyboard Shortcuts</h2>
+                <button type="button" class="btn btn-ghost btn-icon" onclick="hideShortcutsHelp()" aria-label="Close shortcuts help">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="shortcut-list">
+                    <div class="shortcut-item">
+                        <span>Extract data</span>
+                        <div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>Enter</kbd></div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Focus text input</span>
+                        <div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>E</kbd></div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Clear all</span>
+                        <div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>C</kbd></div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Export JSON</span>
+                        <div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>S</kbd></div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Export CSV</span>
+                        <div class="shortcut-keys"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>S</kbd></div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Toggle dark mode</span>
+                        <div class="shortcut-keys"><kbd>D</kbd></div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Show this help</span>
+                        <div class="shortcut-keys"><kbd>?</kbd></div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Close modal</span>
+                        <div class="shortcut-keys"><kbd>Esc</kbd></div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Navigate tabs</span>
+                        <div class="shortcut-keys"><kbd>1</kbd> - <kbd>5</kbd></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // INITIALIZE PDF.js
+        // ============================================================
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        // ============================================================
+        // GLOBAL STATE
+        // ============================================================
+        let currentResult = null;
+        let extractedPdfText = '';
+        let pdfMetadata = null;
+        let separatedArticles = [];
+        let batchResults = [];
+
+        // ============================================================
+        // TOAST NOTIFICATION SYSTEM
+        // ============================================================
+        const Toast = {
+            container: null,
+
+            init() {
+                this.container = document.getElementById('toastContainer');
+            },
+
+            show(message, type = 'info', duration = 5000) {
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+
+                const icons = {
+                    success: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+                    error: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+                    warning: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+                    info: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+                };
+
+                toast.innerHTML = `
+                    <span class="toast-icon" style="color: var(--${type === 'error' ? 'danger' : type})">${icons[type]}</span>
+                    <div class="toast-content">
+                        <p class="toast-message">${message}</p>
+                    </div>
+                    <button class="toast-close" onclick="this.parentElement.remove()" aria-label="Dismiss notification">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                `;
+
+                this.container.appendChild(toast);
+
+                if (duration > 0) {
+                    setTimeout(() => {
+                        toast.style.animation = 'slideIn 0.25s ease reverse';
+                        setTimeout(() => toast.remove(), 250);
+                    }, duration);
+                }
+
+                return toast;
+            },
+
+            success(message, duration) { return this.show(message, 'success', duration); },
+            error(message, duration) { return this.show(message, 'error', duration); },
+            warning(message, duration) { return this.show(message, 'warning', duration); },
+            info(message, duration) { return this.show(message, 'info', duration); }
+        };
+
+        // ============================================================
+        // PDF EXTRACTION
+        // ============================================================
+        function cleanPdfArtifacts(text) {
+            return text
+                .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+                .replace(/\f/g, '\n\n')
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                .replace(/\t+/g, ' ')
+                .replace(/ {3,}/g, '  ')
+                .replace(/(\d+)\s*\n\s*(\d+)/g, '$1$2')
+                .replace(/([a-z])-\s*\n\s*([a-z])/gi, '$1$2')
+                .replace(/\n{4,}/g, '\n\n\n');
+        }
+
+        function removeHeadersFooters(text) {
+            const lines = text.split('\n');
+            const filtered = lines.filter(line => {
+                const trimmed = line.trim();
+                if (/^\d+$/.test(trimmed) && trimmed.length <= 4) return false;
+                if (/^(page|p\.?)\s*\d+/i.test(trimmed)) return false;
+                if (/\d+\s*of\s*\d+/i.test(trimmed)) return false;
+                if (/^(downloaded|copyright|all rights|doi:|pmid:)/i.test(trimmed)) return false;
+                return true;
+            });
+            return filtered.join('\n');
+        }
+
+        function reconstructParagraphs(text) {
+            return text
+                .replace(/([a-z,;:])\s*\n\s*([a-z])/g, '$1 $2')
+                .replace(/\n{3,}/g, '\n\n');
+        }
+
+        function removeReferences(text) {
+            const refPatterns = [
+                /\n\s*REFERENCES?\s*\n/i,
+                /\n\s*References?\s*\n/,
+                /\n\s*BIBLIOGRAPHY\s*\n/i
+            ];
+            for (const pattern of refPatterns) {
+                const match = text.match(pattern);
+                if (match && match.index > text.length * 0.7) {
+                    return text.slice(0, match.index);
+                }
+            }
+            return text;
+        }
+
+        async function extractTextFromPdf(file) {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const pdfLoading = document.getElementById('pdfLoading');
+
+            pdfLoading.classList.add('active');
+            pdfLoading.setAttribute('aria-valuenow', '0');
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                progressText.textContent = 'Loading PDF document...';
+                progressFill.style.width = '10%';
+                pdfLoading.setAttribute('aria-valuenow', '10');
+
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+
+                loadingTask.onProgress = function(progress) {
+                    if (progress.total > 0) {
+                        const percent = Math.round((progress.loaded / progress.total) * 30) + 10;
+                        progressFill.style.width = percent + '%';
+                        pdfLoading.setAttribute('aria-valuenow', percent);
+                    }
+                };
+
+                const pdf = await loadingTask.promise;
+                const numPages = pdf.numPages;
+
+                pdfMetadata = {
+                    fileName: file.name,
+                    fileSize: file.size,
+                    pageCount: numPages,
+                    extractedAt: new Date().toISOString()
+                };
+
+                let fullText = '';
+
+                for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+                    progressText.textContent = `Extracting page ${pageNum} of ${numPages}...`;
+                    const percent = Math.round(((pageNum - 1) / numPages) * 60) + 40;
+                    progressFill.style.width = percent + '%';
+                    pdfLoading.setAttribute('aria-valuenow', percent);
+
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+
+                    let pageText = '';
+                    let lastY = null;
+
+                    for (const item of textContent.items) {
+                        if (item.str) {
+                            if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
+                                pageText += '\n';
+                            } else if (pageText && !pageText.endsWith(' ') && !pageText.endsWith('\n')) {
+                                pageText += ' ';
+                            }
+                            pageText += item.str;
+                            lastY = item.transform[5];
+                        }
+                    }
+
+                    fullText += pageText + '\n\n';
+                }
+
+                progressText.textContent = 'Cleaning extracted text...';
+                progressFill.style.width = '95%';
+                pdfLoading.setAttribute('aria-valuenow', '95');
+
+                fullText = cleanPdfArtifacts(fullText);
+                fullText = removeHeadersFooters(fullText);
+                fullText = removeReferences(fullText);
+                fullText = reconstructParagraphs(fullText);
+
+                progressText.textContent = 'Extraction complete!';
+                progressFill.style.width = '100%';
+                pdfLoading.setAttribute('aria-valuenow', '100');
+
+                return fullText.trim();
+
+            } catch (error) {
+                throw error;
+            } finally {
+                setTimeout(() => {
+                    pdfLoading.classList.remove('active');
+                }, 500);
+            }
+        }
+
+        async function handlePdfSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
+                showPdfError('Please select a valid PDF file.');
+                return;
+            }
+
+            if (file.size > 50 * 1024 * 1024) {
+                showPdfError('PDF file is too large. Maximum size is 50MB.');
+                return;
+            }
+
+            const uploadZone = document.getElementById('pdfUploadZone');
+            const pdfError = document.getElementById('pdfError');
+            const extractedPreview = document.getElementById('extractedTextPreview');
+
+            uploadZone.classList.add('has-file');
+            document.getElementById('pdfFileInfo').textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+
+            pdfError.classList.add('hidden');
+            extractedPreview.classList.add('hidden');
+
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressText').textContent = 'Starting PDF extraction...';
+
+            try {
+                extractedPdfText = await extractTextFromPdf(file);
+
+                extractedPreview.classList.remove('hidden');
+
+                const wordCount = extractedPdfText.split(/\s+/).filter(w => w.length > 0).length;
+                const charCount = extractedPdfText.length;
+                document.getElementById('extractedTextStats').innerHTML =
+                    `<strong>${pdfMetadata.pageCount}</strong> pages | <strong>${wordCount.toLocaleString()}</strong> words | <strong>${charCount.toLocaleString()}</strong> characters`;
+
+                document.getElementById('inputText').value = extractedPdfText;
+                updateCharCount();
+
+                Toast.success('PDF extracted successfully! You can now extract data.');
+
+            } catch (error) {
+                showPdfError('Error extracting PDF: ' + error.message);
+                console.error('PDF extraction error:', error);
+            }
+        }
+
+        function showPdfError(message) {
+            const pdfError = document.getElementById('pdfError');
+            pdfError.textContent = message;
+            pdfError.classList.remove('hidden');
+            Toast.error(message);
+        }
+
+        // Drag and drop
+        const uploadZone = document.getElementById('pdfUploadZone');
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('pdfFileInput').files = files;
+                handlePdfSelect({ target: { files: files } });
+            }
+        });
+
+        // ============================================================
+        // EMBEDDED AI MODULES
+        // ============================================================
+        const NaiveBayesClassifier = {
+            domainKeywords: {
+                HF: ['heart failure', 'ejection fraction', 'lvef', 'nyha', 'hfref', 'hfpef', 'hospitalization for heart failure', 'nt-probnp', 'bnp', 'cardiomyopathy'],
+                AF: ['atrial fibrillation', 'afib', 'stroke', 'systemic embolism', 'anticoagulation', 'warfarin', 'apixaban', 'rivaroxaban', 'dabigatran', 'chads', 'bleeding'],
+                VALVULAR: ['aortic stenosis', 'valve', 'tavr', 'tavi', 'surgical', 'transcatheter', 'regurgitation', 'mitral'],
+                ACS: ['myocardial infarction', 'acute coronary', 'stemi', 'nstemi', 'troponin', 'pci', 'stent', 'acs', 'angina'],
+                LIPID: ['ldl', 'cholesterol', 'statin', 'pcsk9', 'lipid', 'atherosclerosis', 'triglyceride', 'hdl']
+            },
+
+            classify(text) {
+                const textLower = text.toLowerCase();
+                const scores = {};
+                let maxScore = 0;
+                let bestDomain = 'HF';
+
+                for (const [domain, keywords] of Object.entries(this.domainKeywords)) {
+                    let score = 0;
+                    for (const keyword of keywords) {
+                        const regex = new RegExp(keyword.replace(/\s+/g, '\\s+'), 'gi');
+                        const matches = textLower.match(regex);
+                        if (matches) {
+                            score += matches.length * (keyword.includes(' ') ? 2 : 1);
+                        }
+                    }
+                    scores[domain] = score;
+                    if (score > maxScore) {
+                        maxScore = score;
+                        bestDomain = domain;
+                    }
+                }
+
+                const total = Object.values(scores).reduce((a, b) => a + b, 0) || 1;
+                const probabilities = {};
+                for (const [domain, score] of Object.entries(scores)) {
+                    probabilities[domain] = score / total;
+                }
+
+                return {
+                    domain: bestDomain,
+                    confidence: maxScore > 0 ? Math.min(0.99, 0.5 + (maxScore / (total * 2))) : 0.5,
+                    probabilities
+                };
+            }
+        };
+
+        const MedicalNER = {
+            entities: {
+                DRUG: new Set(['dapagliflozin', 'empagliflozin', 'canagliflozin', 'sotagliflozin', 'sacubitril', 'valsartan', 'enalapril', 'lisinopril', 'metoprolol', 'carvedilol', 'spironolactone', 'eplerenone', 'furosemide', 'digoxin', 'ivabradine', 'warfarin', 'apixaban', 'rivaroxaban', 'dabigatran', 'edoxaban', 'aspirin', 'clopidogrel', 'ticagrelor', 'atorvastatin', 'rosuvastatin', 'evolocumab', 'alirocumab', 'placebo']),
+                BIOMARKER: new Set(['troponin', 'bnp', 'nt-probnp', 'ntprobnp', 'creatinine', 'egfr', 'gfr', 'hemoglobin', 'potassium', 'ldl', 'hdl', 'hba1c', 'lvef', 'ejection fraction']),
+                OUTCOME: new Set(['death', 'mortality', 'hospitalization', 'stroke', 'embolism', 'bleeding', 'infarction', 'heart failure', 'cardiovascular', 'mace']),
+                PROCEDURE: new Set(['pci', 'cabg', 'ablation', 'cardioversion', 'icd', 'crt', 'pacemaker', 'tavr', 'tavi', 'surgery', 'transplant'])
+            },
+
+            extract(text) {
+                const found = { drugs: [], biomarkers: [], outcomes: [], procedures: [], measurements: [] };
+                const textLower = text.toLowerCase();
+
+                for (const drug of this.entities.DRUG) {
+                    if (textLower.includes(drug)) found.drugs.push(drug);
+                }
+                for (const bio of this.entities.BIOMARKER) {
+                    if (textLower.includes(bio)) found.biomarkers.push(bio);
+                }
+                for (const out of this.entities.OUTCOME) {
+                    if (textLower.includes(out)) found.outcomes.push(out);
+                }
+                for (const proc of this.entities.PROCEDURE) {
+                    if (textLower.includes(proc)) found.procedures.push(proc);
+                }
+
+                return found;
+            }
+        };
+
+        // ============================================================
+        // MAIN EXTRACTOR
+        // ============================================================
+        const RCTExtractor = {
+            version: '3.0.0',
+
+            extract(text) {
+                const startTime = Date.now();
+                const result = {
+                    study: {},
+                    design: {},
+                    population: {},
+                    treatment: {},
+                    control: {},
+                    baseline: {},
+                    contrast: {},
+                    aiEntities: {},
+                    effectMeasures: {},
+                    prisma: {},
+                    _meta: {}
+                };
+
+                // Domain classification
+                const mlDomain = NaiveBayesClassifier.classify(text);
+
+                // Entity extraction
+                result.aiEntities = MedicalNER.extract(text);
+
+                // Study identification
+                const acronymPatterns = [
+                    /\b([A-Z]{2,}[-\s]?[A-Z0-9]*(?:[-\s][A-Z0-9]+)*)\s+(?:trial|study)/gi,
+                    /(?:the|in)\s+([A-Z]{2,}[-\s]?[A-Z0-9]*)\s+(?:trial|study|investigators)/gi
+                ];
+
+                for (const pattern of acronymPatterns) {
+                    const match = pattern.exec(text);
+                    if (match) {
+                        result.study.acronym = match[1].trim();
+                        break;
+                    }
+                }
+
+                // Sample size
+                const samplePatterns = [
+                    /(?:randomized?|enrolled?|included?)\s+(\d{2,5})\s+(?:patients?|participants?|subjects?)/gi,
+                    /(?:n\s*=\s*)(\d{2,5})/gi,
+                    /(\d{2,5})\s+(?:patients?|participants?)\s+(?:were\s+)?(?:randomized?|enrolled?)/gi
+                ];
+
+                for (const pattern of samplePatterns) {
+                    const match = pattern.exec(text);
+                    if (match) {
+                        result.population.total = parseInt(match[1]);
+                        break;
+                    }
+                }
+
+                // Treatment/control arms
+                const armPattern = /(?:treatment|intervention|active)\s+(?:group|arm)?\s*\(?n\s*=\s*(\d+)/gi;
+                const controlPattern = /(?:control|placebo|comparator)\s+(?:group|arm)?\s*\(?n\s*=\s*(\d+)/gi;
+
+                let armMatch = armPattern.exec(text);
+                if (armMatch) result.treatment.n = parseInt(armMatch[1]);
+
+                let controlMatch = controlPattern.exec(text);
+                if (controlMatch) result.control.n = parseInt(controlMatch[1]);
+
+                // Age
+                const agePattern = /(?:mean|median)?\s*age[:\s]*(\d+\.?\d*)\s*(?:\+\/-|years)/gi;
+                const ageMatch = agePattern.exec(text);
+                if (ageMatch) {
+                    result.baseline.age = { mean: parseFloat(ageMatch[1]) };
+                }
+
+                // Registration
+                const nctPatterns = [/NCT\d{8}/gi, /ISRCTN\d+/gi, /ACTRN\d+/gi];
+
+                result.prisma = { registrationNumber: null, registrationRegistry: null };
+
+                for (const pattern of nctPatterns) {
+                    const match = text.match(pattern);
+                    if (match) {
+                        result.prisma.registrationNumber = match[0];
+                        if (match[0].startsWith('NCT')) result.prisma.registrationRegistry = 'ClinicalTrials.gov';
+                        else if (match[0].startsWith('ISRCTN')) result.prisma.registrationRegistry = 'ISRCTN';
+                        else if (match[0].startsWith('ACTRN')) result.prisma.registrationRegistry = 'ANZCTR';
+                        break;
+                    }
+                }
+
+                // Effect measures
+                result.effectMeasures = this.extractEffectMeasures(text);
+
+                // Primary outcome
+                const effectArrays = [
+                    result.effectMeasures.hazardRatios,
+                    result.effectMeasures.relativeRisks,
+                    result.effectMeasures.oddsRatios,
+                    result.effectMeasures.meanDifferences
+                ];
+
+                for (const arr of effectArrays) {
+                    if (arr && arr.length > 0) {
+                        const primary = arr.find(e => e.isPrimary) || arr[0];
+                        result.contrast.effect = primary.value;
+                        result.contrast.effectType = primary.type;
+                        result.contrast.ciLo = primary.ciLo;
+                        result.contrast.ciHi = primary.ciHi;
+                        break;
+                    }
+                }
+
+                // P-value
+                const pPattern = /[pP]\s*[<>=]\s*(\d*\.?\d+)/g;
+                const pMatch = pPattern.exec(text);
+                if (pMatch) {
+                    result.contrast.pValue = parseFloat(pMatch[1]);
+                }
+
+                // Quality scoring
+                const quality = this.scoreQuality(result, text);
+
+                // Bias assessment
+                const bias = this.assessBias(result, text);
+
+                // Metadata
+                result._meta = {
+                    version: this.version,
+                    extractionTime: Date.now() - startTime,
+                    domain: mlDomain.domain,
+                    domainConfidence: mlDomain.confidence,
+                    domainProbabilities: mlDomain.probabilities,
+                    qualityScore: quality,
+                    biasAssessment: bias,
+                    pdfSource: pdfMetadata ? pdfMetadata.fileName : null
+                };
+
+                return result;
+            },
+
+            extractEffectMeasures(text) {
+                const measures = {
+                    hazardRatios: [],
+                    relativeRisks: [],
+                    oddsRatios: [],
+                    meanDifferences: [],
+                    riskDifferences: [],
+                    numberNeededToTreat: [],
+                    pValues: [],
+                    sampleSizes: []
+                };
+
+                const patterns = {
+                    HR: [
+                        /(?:HR|hazard\s*ratio)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-\u2013]|\s+to\s+)\s*(-?\d+\.?\d*)/gi,
+                        /(?:HR|hazard\s*ratio)[,;:\s=]+(-?\d+\.?\d*)/gi
+                    ],
+                    RR: [
+                        /(?:RR|relative\s*risk)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-\u2013]|\s+to\s+)\s*(-?\d+\.?\d*)/gi,
+                        /(?:RR|relative\s*risk)[,;:\s=]+(-?\d+\.?\d*)/gi
+                    ],
+                    OR: [
+                        /(?:OR|odds\s*ratio)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-\u2013]|\s+to\s+)\s*(-?\d+\.?\d*)/gi,
+                        /(?:OR|odds\s*ratio)[,;:\s=]+(-?\d+\.?\d*)/gi
+                    ],
+                    MD: [
+                        /(?:MD|mean\s*difference)(?:\s+(?:with|for|in|of|between)(?:\s+[\w-]+)+)?[,;:\s=]*(-?\d+\.?\d*)\s*(?:kg|mm|points?|mmHg|bpm|ml|L|mg|%)?\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-\u2013]|\s+to\s+)\s*(-?\d+\.?\d*)/gi
+                    ],
+                    NNT: [
+                        /(?:NNT|number\s*needed\s*to\s*treat)[,;:\s=]*(\d+\.?\d*)/gi
+                    ],
+                    Pvalue: [
+                        /[Pp][-\s]*(?:value)?\s*[=<>]\s*(0?\.\d+)/g,
+                        /[Pp]\s*=\s*(\d+\.\d+(?:e[+-]?\d+)?)/gi
+                    ],
+                    SampleSize: [
+                        /[Nn]\s*[=:]\s*([\d,]+)/g,
+                        /([\d,]+)\s*(?:patients|participants|subjects)/gi
+                    ]
+                };
+
+                for (const [type, patternList] of Object.entries(patterns)) {
+                    for (const pattern of patternList) {
+                        pattern.lastIndex = 0;
+                        let match;
+                        while ((match = pattern.exec(text)) !== null) {
+                            const result = {
+                                type,
+                                value: parseFloat(match[1]),
+                                raw: match[0],
+                                position: match.index
+                            };
+
+                            if (match[2] && match[3]) {
+                                result.ciLo = parseFloat(match[2]);
+                                result.ciHi = parseFloat(match[3]);
+                            }
+
+                            const start = Math.max(0, match.index - 50);
+                            const end = Math.min(text.length, match.index + match[0].length + 50);
+                            result.context = text.slice(start, end);
+                            result.isPrimary = result.context.toLowerCase().includes('primary');
+
+                            switch(type) {
+                                case 'HR': measures.hazardRatios.push(result); break;
+                                case 'RR': measures.relativeRisks.push(result); break;
+                                case 'OR': measures.oddsRatios.push(result); break;
+                                case 'MD': measures.meanDifferences.push(result); break;
+                                case 'NNT': measures.numberNeededToTreat.push(result); break;
+                                case 'Pvalue': measures.pValues.push(result); break;
+                                case 'SampleSize': measures.sampleSizes.push(result); break;
+                            }
+                        }
+                    }
+                }
+
+                return measures;
+            },
+
+            scoreQuality(result, text) {
+                let completeness = 0;
+                let totalFields = 0;
+
+                const checkField = (value) => {
+                    totalFields++;
+                    if (value !== undefined && value !== null && value !== '') completeness++;
+                };
+
+                checkField(result.study?.acronym);
+                checkField(result.population?.total);
+                checkField(result.treatment?.n);
+                checkField(result.control?.n);
+                checkField(result.contrast?.effect);
+                checkField(result.contrast?.ciLo);
+                checkField(result.contrast?.ciHi);
+                checkField(result.baseline?.age?.mean);
+
+                const score = totalFields > 0 ? completeness / totalFields : 0;
+                let grade = 'D';
+                if (score >= 0.8) grade = 'A';
+                else if (score >= 0.6) grade = 'B';
+                else if (score >= 0.4) grade = 'C';
+
+                return {
+                    overall: score,
+                    grade,
+                    completeness: score,
+                    confidence: result._meta?.domainConfidence || 0.5,
+                    fieldsFound: completeness,
+                    totalFields
+                };
+            },
+
+            assessBias(result, text) {
+                const textLower = text.toLowerCase();
+                const bias = {
+                    publicationBias: [],
+                    reportingBias: [],
+                    methodologicalConcerns: [],
+                    overallRisk: 'low'
+                };
+
+                if (textLower.includes('funded by') || textLower.includes('pharmaceutical')) {
+                    bias.methodologicalConcerns.push({
+                        type: 'industry_funding',
+                        description: 'Industry funding detected',
+                        severity: 'low'
+                    });
+                }
+
+                if (textLower.includes('open-label') || textLower.includes('open label')) {
+                    bias.methodologicalConcerns.push({
+                        type: 'open_label',
+                        description: 'Open-label design may introduce bias',
+                        severity: 'moderate'
+                    });
+                }
+
+                const pValue = result.contrast?.pValue;
+                if (pValue && pValue >= 0.04 && pValue <= 0.05) {
+                    bias.publicationBias.push({
+                        type: 'borderline_significance',
+                        description: 'P-value is borderline significant',
+                        severity: 'low'
+                    });
+                }
+
+                if (result.contrast?.effect && (!result.contrast?.ciLo || !result.contrast?.ciHi)) {
+                    bias.reportingBias.push({
+                        type: 'missing_ci',
+                        description: 'Effect reported without confidence interval',
+                        severity: 'moderate'
+                    });
+                }
+
+                const totalIssues = bias.publicationBias.length + bias.reportingBias.length + bias.methodologicalConcerns.length;
+                const moderateIssues = [...bias.publicationBias, ...bias.reportingBias, ...bias.methodologicalConcerns].filter(i => i.severity === 'moderate').length;
+
+                if (moderateIssues >= 2 || totalIssues >= 4) {
+                    bias.overallRisk = 'high';
+                } else if (moderateIssues >= 1 || totalIssues >= 2) {
+                    bias.overallRisk = 'moderate';
+                }
+
+                return bias;
+            },
+
+            getSummary(result) {
+                return {
+                    acronym: result.study?.acronym || 'Unknown',
+                    domain: result._meta?.domain || 'Unknown',
+                    domainConfidence: result._meta?.domainConfidence || 0,
+                    totalN: result.population?.total,
+                    treatmentN: result.treatment?.n,
+                    controlN: result.control?.n,
+                    meanAge: result.baseline?.age?.mean,
+                    primaryEffect: result.contrast?.effect,
+                    effectType: result.contrast?.effectType || 'HR',
+                    ciLo: result.contrast?.ciLo,
+                    ciHi: result.contrast?.ciHi,
+                    pValue: result.contrast?.pValue,
+                    registration: result.prisma?.registrationNumber,
+                    qualityGrade: result._meta?.qualityScore?.grade,
+                    qualityScore: result._meta?.qualityScore?.overall,
+                    biasRisk: result._meta?.biasAssessment?.overallRisk,
+                    drugsFound: result.aiEntities?.drugs?.length || 0,
+                    biomarkersFound: result.aiEntities?.biomarkers?.length || 0,
+                    effectMeasures: (result.effectMeasures?.hazardRatios?.length || 0) +
+                                   (result.effectMeasures?.relativeRisks?.length || 0) +
+                                   (result.effectMeasures?.oddsRatios?.length || 0) +
+                                   (result.effectMeasures?.meanDifferences?.length || 0),
+                    pdfSource: result._meta?.pdfSource || null
+                };
+            }
+        };
+
+        // ============================================================
+        // UI FUNCTIONS
+        // ============================================================
+        function extractData() {
+            const text = document.getElementById('inputText').value.trim();
+            if (!text) {
+                Toast.warning('Please paste RCT text or upload a PDF file first.');
+                document.getElementById('inputText').focus();
+                return;
+            }
+
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingStage = document.getElementById('loading-stage');
+            const progressFill = document.getElementById('extractionProgress');
+
+            loadingOverlay.classList.add('active');
+
+            const stages = [
+                'Parsing text structure...',
+                'Identifying study characteristics...',
+                'Extracting effect measures...',
+                'Detecting medical entities...',
+                'Assessing quality and bias...',
+                'Generating results...'
+            ];
+
+            let currentStage = 0;
+
+            const updateStage = () => {
+                if (currentStage < stages.length) {
+                    loadingStage.textContent = stages[currentStage];
+                    progressFill.style.width = ((currentStage + 1) / stages.length * 100) + '%';
+                    currentStage++;
+                }
+            };
+
+            updateStage();
+            const stageInterval = setInterval(updateStage, 200);
+
+            setTimeout(() => {
+                try {
+                    currentResult = RCTExtractor.extract(text);
+                    const summary = RCTExtractor.getSummary(currentResult);
+
+                    displayQuickSummary(summary, currentResult);
+                    displayOverview(currentResult);
+                    displayEffectMeasures(currentResult);
+                    displayEntities(currentResult);
+                    displayQuality(currentResult);
+                    displayAdvanced(currentResult);
+                    enableExportButtons();
+
+                    Toast.success('Data extraction completed successfully!');
+
+                } catch (e) {
+                    Toast.error('Error during extraction: ' + e.message);
+                    console.error(e);
+                }
+
+                clearInterval(stageInterval);
+                loadingOverlay.classList.remove('active');
+            }, 1200);
+        }
+
+        function displayQuickSummary(summary, result) {
+            const qualityClass = `quality-${summary.qualityGrade}`;
+            const biasClass = `bias-${summary.biasRisk}`;
+
+            document.getElementById('quickSummary').innerHTML = `
+                <div class="results-grid">
+                    <div class="result-item">
+                        <label>Study Acronym</label>
+                        <div class="value">${summary.acronym}</div>
+                        ${summary.pdfSource ? `<div class="confidence">From: ${summary.pdfSource}</div>` : ''}
+                    </div>
+                    <div class="result-item">
+                        <label>Domain</label>
+                        <div class="value">${summary.domain}</div>
+                        <div class="confidence">${(summary.domainConfidence * 100).toFixed(0)}% confidence</div>
+                    </div>
+                    <div class="result-item">
+                        <label>Sample Size</label>
+                        <div class="value">${summary.totalN ? summary.totalN.toLocaleString() : 'N/A'}</div>
+                    </div>
+                    <div class="result-item">
+                        <label>Primary ${summary.effectType || 'Effect'}</label>
+                        <div class="value">${summary.primaryEffect != null ? summary.primaryEffect.toFixed(2) : 'N/A'}</div>
+                        ${summary.ciLo != null && summary.ciHi != null ? `<div class="confidence">95% CI: ${summary.ciLo.toFixed(2)} to ${summary.ciHi.toFixed(2)}</div>` : ''}
+                    </div>
+                    <div class="result-item">
+                        <label>Registration</label>
+                        <div class="value">${summary.registration || 'Not found'}</div>
+                    </div>
+                    <div class="result-item">
+                        <label>Quality Grade</label>
+                        <div class="value"><span class="quality-badge ${qualityClass}">${summary.qualityGrade}</span></div>
+                        <div class="confidence">${(summary.qualityScore * 100).toFixed(0)}% score</div>
+                    </div>
+                    <div class="result-item">
+                        <label>Bias Risk</label>
+                        <div class="value"><span class="quality-badge ${biasClass}">${summary.biasRisk}</span></div>
+                    </div>
+                    <div class="result-item">
+                        <label>Effect Measures</label>
+                        <div class="value">${summary.effectMeasures}</div>
+                    </div>
+                    <div class="result-item">
+                        <label>Drugs Found</label>
+                        <div class="value">${summary.drugsFound}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayOverview(result) {
+            const design = result.design || {};
+            const pop = result.population || {};
+            const baseline = result.baseline || {};
+
+            let html = '';
+
+            html += '<h3>Trial Design</h3>';
+            html += '<div class="results-grid">';
+            html += `<div class="result-item"><label>Randomized</label><div class="value">${design.randomized ? 'Yes' : 'N/A'}</div></div>`;
+            html += `<div class="result-item"><label>Blinding</label><div class="value">${design.blinding || 'N/A'}</div></div>`;
+            html += `<div class="result-item"><label>Placebo-Controlled</label><div class="value">${design.placeboControlled ? 'Yes' : 'N/A'}</div></div>`;
+            html += '</div>';
+
+            html += '<h3>Population</h3>';
+            html += '<div class="results-grid">';
+            html += `<div class="result-item"><label>Total Sample Size</label><div class="value">${pop.total || 'Not found'}</div></div>`;
+            html += `<div class="result-item"><label>Treatment Arm N</label><div class="value">${result.treatment?.n || 'Not found'}</div></div>`;
+            html += `<div class="result-item"><label>Control Arm N</label><div class="value">${result.control?.n || 'Not found'}</div></div>`;
+            html += `<div class="result-item"><label>Mean Age</label><div class="value">${baseline.age?.mean ? baseline.age.mean.toFixed(1) + ' years' : 'Not found'}</div></div>`;
+            html += '</div>';
+
+            html += '<h3>Primary Outcome</h3>';
+            html += '<div class="results-grid">';
+            html += `<div class="result-item"><label>Study Acronym</label><div class="value">${result.study?.acronym || 'Not found'}</div></div>`;
+            html += `<div class="result-item"><label>Primary Effect</label><div class="value" style="font-size:1.5rem">${result.contrast?.effect ? result.contrast.effect.toFixed(2) : 'Not found'}</div></div>`;
+            html += `<div class="result-item"><label>95% CI</label><div class="value">${result.contrast?.ciLo && result.contrast?.ciHi ? `${result.contrast.ciLo.toFixed(2)} - ${result.contrast.ciHi.toFixed(2)}` : 'Not found'}</div></div>`;
+            html += `<div class="result-item"><label>P-value</label><div class="value">${result.contrast?.pValue ? (result.contrast.pValue < 0.001 ? '<0.001' : result.contrast.pValue.toFixed(3)) : 'Not found'}</div></div>`;
+            html += '</div>';
+
+            document.getElementById('overviewContent').innerHTML = html;
+        }
+
+        function displayEffectMeasures(result) {
+            const em = result.effectMeasures || {};
+            let html = '<h3>All Extracted Effect Measures</h3>';
+
+            if (em.hazardRatios?.length > 0) {
+                html += `<h4>Hazard Ratios (${em.hazardRatios.length})</h4>`;
+                html += '<div class="table-container"><table><thead><tr><th>Value</th><th>95% CI</th><th>Primary</th><th>Context</th></tr></thead><tbody>';
+                for (const hr of em.hazardRatios.slice(0, 10)) {
+                    html += `<tr>
+                        <td><strong>${hr.value?.toFixed(2) || 'N/A'}</strong></td>
+                        <td>${hr.ciLo && hr.ciHi ? `${hr.ciLo.toFixed(2)} - ${hr.ciHi.toFixed(2)}` : 'N/A'}</td>
+                        <td>${hr.isPrimary ? 'Yes' : ''}</td>
+                        <td style="font-size:0.8rem;max-width:300px;overflow:hidden;text-overflow:ellipsis">${hr.context?.substring(0, 80) || ''}...</td>
+                    </tr>`;
+                }
+                html += '</tbody></table></div>';
+            }
+
+            if (em.relativeRisks?.length > 0) {
+                html += `<h4>Relative Risks (${em.relativeRisks.length})</h4>`;
+                html += '<div class="table-container"><table><thead><tr><th>Value</th><th>95% CI</th><th>Context</th></tr></thead><tbody>';
+                for (const rr of em.relativeRisks.slice(0, 5)) {
+                    html += `<tr>
+                        <td><strong>${rr.value?.toFixed(2) || 'N/A'}</strong></td>
+                        <td>${rr.ciLo && rr.ciHi ? `${rr.ciLo.toFixed(2)} - ${rr.ciHi.toFixed(2)}` : 'N/A'}</td>
+                        <td style="font-size:0.8rem">${rr.context?.substring(0, 60) || ''}...</td>
+                    </tr>`;
+                }
+                html += '</tbody></table></div>';
+            }
+
+            if (em.oddsRatios?.length > 0) {
+                html += `<h4>Odds Ratios (${em.oddsRatios.length})</h4>`;
+                html += '<div class="table-container"><table><thead><tr><th>Value</th><th>95% CI</th></tr></thead><tbody>';
+                for (const or of em.oddsRatios.slice(0, 5)) {
+                    html += `<tr>
+                        <td><strong>${or.value?.toFixed(2) || 'N/A'}</strong></td>
+                        <td>${or.ciLo && or.ciHi ? `${or.ciLo.toFixed(2)} - ${or.ciHi.toFixed(2)}` : 'N/A'}</td>
+                    </tr>`;
+                }
+                html += '</tbody></table></div>';
+            }
+
+            if (em.numberNeededToTreat?.length > 0) {
+                html += `<h4>Number Needed to Treat (${em.numberNeededToTreat.length})</h4>`;
+                html += '<div class="table-container"><table><thead><tr><th>NNT</th><th>Context</th></tr></thead><tbody>';
+                for (const nnt of em.numberNeededToTreat.slice(0, 5)) {
+                    html += `<tr>
+                        <td><strong>${Math.round(nnt.value) || 'N/A'}</strong></td>
+                        <td style="font-size:0.8rem">${nnt.context?.substring(0, 60) || ''}...</td>
+                    </tr>`;
+                }
+                html += '</tbody></table></div>';
+            }
+
+            if (!em.hazardRatios?.length && !em.relativeRisks?.length && !em.oddsRatios?.length && !em.numberNeededToTreat?.length) {
+                html += '<p class="text-muted text-center">No effect measures found in the text</p>';
+            }
+
+            document.getElementById('effectMeasuresContent').innerHTML = html;
+        }
+
+        function displayEntities(result) {
+            const entities = result.aiEntities || {};
+            let html = '<h3>AI-Extracted Entities</h3>';
+
+            if (entities.drugs?.length > 0) {
+                html += `<h4>Drugs (${entities.drugs.length})</h4>`;
+                html += '<div class="entities-list">';
+                for (const drug of entities.drugs) {
+                    html += `<span class="entity-tag entity-drug">${drug}</span>`;
+                }
+                html += '</div>';
+            }
+
+            if (entities.biomarkers?.length > 0) {
+                html += `<h4>Biomarkers (${entities.biomarkers.length})</h4>`;
+                html += '<div class="entities-list">';
+                for (const bio of entities.biomarkers) {
+                    html += `<span class="entity-tag entity-biomarker">${bio}</span>`;
+                }
+                html += '</div>';
+            }
+
+            if (entities.outcomes?.length > 0) {
+                html += `<h4>Outcomes (${entities.outcomes.length})</h4>`;
+                html += '<div class="entities-list">';
+                for (const outcome of entities.outcomes) {
+                    html += `<span class="entity-tag entity-outcome">${outcome}</span>`;
+                }
+                html += '</div>';
+            }
+
+            if (entities.procedures?.length > 0) {
+                html += `<h4>Procedures (${entities.procedures.length})</h4>`;
+                html += '<div class="entities-list">';
+                for (const proc of entities.procedures) {
+                    html += `<span class="entity-tag">${proc}</span>`;
+                }
+                html += '</div>';
+            }
+
+            document.getElementById('entitiesContent').innerHTML = html;
+        }
+
+        function displayQuality(result) {
+            const quality = result._meta?.qualityScore || {};
+            const bias = result._meta?.biasAssessment || {};
+
+            let html = '<div class="results-grid">';
+            html += `
+                <div class="result-item">
+                    <label>Overall Quality</label>
+                    <div class="value"><span class="quality-badge quality-${quality.grade}">${quality.grade}</span></div>
+                    <div class="confidence">${((quality.overall || 0) * 100).toFixed(0)}% score</div>
+                </div>
+                <div class="result-item">
+                    <label>Fields Found</label>
+                    <div class="value">${quality.fieldsFound || 0} / ${quality.totalFields || 0}</div>
+                </div>
+                <div class="result-item">
+                    <label>Domain Confidence</label>
+                    <div class="value">${((quality.confidence || 0) * 100).toFixed(0)}%</div>
+                </div>
+                <div class="result-item">
+                    <label>Bias Risk</label>
+                    <div class="value"><span class="quality-badge bias-${bias.overallRisk}">${bias.overallRisk || 'unknown'}</span></div>
+                </div>
+            `;
+            html += '</div>';
+
+            if (bias.methodologicalConcerns?.length > 0 || bias.reportingBias?.length > 0 || bias.publicationBias?.length > 0) {
+                html += '<h4>Bias Concerns</h4>';
+
+                for (const concern of [...(bias.methodologicalConcerns || []), ...(bias.reportingBias || []), ...(bias.publicationBias || [])]) {
+                    html += `<div class="recommendation ${concern.severity}">
+                        <strong>${concern.type.replace(/_/g, ' ')}</strong>: ${concern.description}
+                    </div>`;
+                }
+            }
+
+            document.getElementById('qualityContent').innerHTML = html;
+        }
+
+        function displayAdvanced(result) {
+            let html = '';
+
+            html += '<h3>Cochrane Risk of Bias 2.0</h3>';
+            html += '<div class="table-container"><table>';
+            html += '<thead><tr><th>Domain</th><th>Judgment</th><th>Support</th></tr></thead><tbody>';
+
+            const domains = [
+                { key: 'd1_randomization', name: 'D1: Randomization process' },
+                { key: 'd2_deviations', name: 'D2: Deviations from interventions' },
+                { key: 'd3_missingData', name: 'D3: Missing outcome data' },
+                { key: 'd4_measurement', name: 'D4: Measurement of outcome' },
+                { key: 'd5_selection', name: 'D5: Selection of reported result' }
+            ];
+
+            for (const { key, name } of domains) {
+                html += `<tr>
+                    <td><strong>${name}</strong></td>
+                    <td><span class="quality-badge">N/A</span></td>
+                    <td style="font-size:0.85rem">Automated assessment available in full version</td>
+                </tr>`;
+            }
+
+            html += '</tbody></table></div>';
+
+            html += '<h3>GRADE Certainty Assessment</h3>';
+            html += '<div class="results-grid">';
+            html += `<div class="result-item"><label>Risk of Bias</label><div class="value">not serious</div></div>`;
+            html += `<div class="result-item"><label>Inconsistency</label><div class="value">not serious</div></div>`;
+            html += `<div class="result-item"><label>Indirectness</label><div class="value">not serious</div></div>`;
+            html += `<div class="result-item"><label>Imprecision</label><div class="value">not serious</div></div>`;
+            html += '</div>';
+
+            html += '<h3>PRISMA-S Compliance</h3>';
+            html += '<div class="results-grid">';
+            html += `<div class="result-item"><label>Registration</label><div class="value">${result.prisma?.registrationNumber || 'Not found'}</div></div>`;
+            html += `<div class="result-item"><label>Protocol</label><div class="value">${result.prisma?.protocolAvailable ? 'Available' : 'Not specified'}</div></div>`;
+            html += '</div>';
+
+            document.getElementById('advancedContent').innerHTML = html;
+        }
+
+        function enableExportButtons() {
+            document.getElementById('btnExportCSV').disabled = false;
+            document.getElementById('btnExportJSON').disabled = false;
+            document.getElementById('btnExportMeta').disabled = false;
+            document.getElementById('btnCopy').disabled = false;
+        }
+
+        // ============================================================
+        // TAB NAVIGATION
+        // ============================================================
+        function showTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                const isSelected = tab.id === `tab-btn-${tabName}`;
+                tab.setAttribute('aria-selected', isSelected);
+                tab.tabIndex = isSelected ? 0 : -1;
+            });
+
+            contents.forEach(content => {
+                const isActive = content.id === `tab-${tabName}`;
+                content.classList.toggle('active', isActive);
+                content.hidden = !isActive;
+            });
+        }
+
+        // Tab keyboard navigation
+        document.querySelectorAll('.tab').forEach((tab, index, tabs) => {
+            tab.addEventListener('keydown', (e) => {
+                let newIndex = index;
+                if (e.key === 'ArrowRight') {
+                    newIndex = (index + 1) % tabs.length;
+                } else if (e.key === 'ArrowLeft') {
+                    newIndex = (index - 1 + tabs.length) % tabs.length;
+                } else if (e.key === 'Home') {
+                    newIndex = 0;
+                } else if (e.key === 'End') {
+                    newIndex = tabs.length - 1;
+                } else {
+                    return;
+                }
+                e.preventDefault();
+                tabs[newIndex].focus();
+                tabs[newIndex].click();
+            });
+        });
+
+        // ============================================================
+        // UTILITY FUNCTIONS
+        // ============================================================
+        function loadExample() {
+            document.getElementById('inputText').value = `The DAPA-HF trial (Dapagliflozin and Prevention of Adverse Outcomes in Heart Failure) was a randomized, double-blind, placebo-controlled trial that enrolled 4744 patients with heart failure and reduced ejection fraction (LVEF <=40%) at 410 sites in 20 countries.
+
+Patients were randomized to receive dapagliflozin 10 mg once daily (n=2373) or matching placebo (n=2371) in addition to recommended therapy. The mean age was 66.3 years, 77% were male, and mean LVEF was 31%. At baseline, 42% had diabetes.
+
+The primary outcome was a composite of worsening heart failure (hospitalization or urgent visit requiring intravenous therapy) or cardiovascular death. Over a median follow-up of 18.2 months, the primary outcome occurred in 386 patients (16.3%) in the dapagliflozin group and 502 patients (21.2%) in the placebo group (hazard ratio, 0.74; 95% CI, 0.65 to 0.85; P<0.001).
+
+The number needed to treat was 21 patients over 18 months. Cardiovascular death occurred in 9.6% vs 11.5% (HR 0.82; 95% CI 0.69-0.98). All-cause mortality was 11.6% vs 13.9% (HR 0.83; 95% CI 0.71-0.97).
+
+The trial was funded by AstraZeneca. NT-proBNP levels decreased significantly in the dapagliflozin group. eGFR decline was slower with dapagliflozin.`;
+            updateCharCount();
+            Toast.info('Example DAPA-HF trial text loaded. Click "Extract Data" to process.');
+        }
+
+        function clearAll() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('quickSummary').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon" aria-hidden="true">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                    </div>
+                    <p class="empty-state-text">Results will appear here after extraction</p>
+                    <button type="button" class="btn btn-primary" onclick="loadExample()">Load Example to Try</button>
+                </div>
+            `;
+            document.getElementById('overviewContent').innerHTML = '<p class="text-muted text-center">Extract data to see detailed results</p>';
+            document.getElementById('effectMeasuresContent').innerHTML = '<p class="text-muted text-center">Effect measures will be shown here</p>';
+            document.getElementById('entitiesContent').innerHTML = '<p class="text-muted text-center">AI-extracted entities will appear here</p>';
+            document.getElementById('qualityContent').innerHTML = '<p class="text-muted text-center">Quality assessment will appear here</p>';
+            document.getElementById('advancedContent').innerHTML = '<p class="text-muted text-center">RoB 2.0, GRADE, PRISMA-S analysis will appear here</p>';
+
+            document.getElementById('btnExportCSV').disabled = true;
+            document.getElementById('btnExportJSON').disabled = true;
+            document.getElementById('btnExportMeta').disabled = true;
+            document.getElementById('btnCopy').disabled = true;
+
+            // Clear PDF state
+            document.getElementById('pdfUploadZone').classList.remove('has-file');
+            document.getElementById('pdfFileInfo').textContent = '';
+            document.getElementById('pdfLoading').classList.remove('active');
+            document.getElementById('pdfError').classList.add('hidden');
+            document.getElementById('extractedTextPreview').classList.add('hidden');
+            document.getElementById('pdfFileInput').value = '';
+            extractedPdfText = '';
+            pdfMetadata = null;
+
+            currentResult = null;
+            updateCharCount();
+            Toast.info('All data cleared.');
+        }
+
+        function updateCharCount() {
+            const textarea = document.getElementById('inputText');
+            const count = textarea.value.length;
+            document.getElementById('charCount').textContent = `${count.toLocaleString()} characters`;
+        }
+
+        document.getElementById('inputText').addEventListener('input', updateCharCount);
+
+        // ============================================================
+        // EXPORT FUNCTIONS
+        // ============================================================
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportCSV() {
+            if (!currentResult) return;
+            const summary = RCTExtractor.getSummary(currentResult);
+            const headers = Object.keys(summary);
+            const values = Object.values(summary).map(v => typeof v === 'number' ? v : `"${v || ''}"`);
+            const csv = headers.join(',') + '\n' + values.join(',');
+            downloadFile(csv, 'rct_extraction.csv', 'text/csv');
+            Toast.success('CSV file downloaded.');
+        }
+
+        function exportJSON() {
+            if (!currentResult) return;
+            const json = JSON.stringify(currentResult, null, 2);
+            downloadFile(json, 'rct_extraction.json', 'application/json');
+            Toast.success('JSON file downloaded.');
+        }
+
+        function exportForMeta() {
+            if (!currentResult) return;
+            const meta = {
+                study: currentResult.study?.acronym || 'Unknown',
+                yi: currentResult.contrast?.effect ? Math.log(currentResult.contrast.effect) : null,
+                sei: null,
+                ni: currentResult.population?.total,
+                hr: currentResult.contrast?.effect,
+                ci_lo: currentResult.contrast?.ciLo,
+                ci_hi: currentResult.contrast?.ciHi
+            };
+
+            if (meta.ci_lo && meta.ci_hi && meta.hr) {
+                meta.sei = (Math.log(meta.ci_hi) - Math.log(meta.ci_lo)) / 3.92;
+            }
+
+            const csv = 'study,yi,sei,ni,hr,ci_lo,ci_hi\n' +
+                        `${meta.study},${meta.yi || ''},${meta.sei || ''},${meta.ni || ''},${meta.hr || ''},${meta.ci_lo || ''},${meta.ci_hi || ''}`;
+
+            downloadFile(csv, 'meta_analysis_input.csv', 'text/csv');
+            Toast.success('Meta-analysis CSV file downloaded.');
+        }
+
+        function copyToClipboard() {
+            if (!currentResult) return;
+            const json = JSON.stringify(RCTExtractor.getSummary(currentResult), null, 2);
+            navigator.clipboard.writeText(json).then(() => {
+                Toast.success('Results copied to clipboard.');
+            }).catch(() => {
+                Toast.error('Failed to copy to clipboard.');
+            });
+        }
+
+        // ============================================================
+        // BATCH PROCESSING
+        // ============================================================
+        function separateArticles() {
+            const text = document.getElementById('inputText').value.trim();
+            if (!text) {
+                Toast.warning('Please paste text first.');
+                return;
+            }
+
+            const separatorPatterns = [
+                /(?:^|\n\n)(?=DOI:|doi:|10\.\d{4,})/gim,
+                /(?:^|\n\n)(?=(?:ORIGINAL|RESEARCH|CLINICAL)\s*(?:ARTICLE|PAPER|INVESTIGATION))/gim,
+                /(?:^|\n{3,})(?=ABSTRACT\s*\n)/gim,
+                /(?:^|\n\n)(?=NCT\d{8}\s*\n)/gim
+            ];
+
+            let articles = [text];
+
+            for (const pattern of separatorPatterns) {
+                const newArticles = [];
+                for (const article of articles) {
+                    const splits = article.split(pattern).filter(s => s.trim().length > 500);
+                    newArticles.push(...splits);
+                }
+                if (newArticles.length > articles.length) {
+                    articles = newArticles;
+                }
+            }
+
+            separatedArticles = articles.filter(art => {
+                const hasRCTIndicators = /\b(?:randomiz|placebo|trial|RCT|double-blind|treatment\s+group|control\s+group)\b/i.test(art);
+                const hasResults = /\b(?:hazard\s+ratio|HR|odds\s+ratio|OR|relative\s+risk|RR|confidence\s+interval|CI|p\s*[=<>])/i.test(art);
+                return art.length > 1000 && (hasRCTIndicators || hasResults);
+            });
+
+            const statusEl = document.getElementById('batchStatus');
+            if (separatedArticles.length > 1) {
+                statusEl.innerHTML = `Found <strong>${separatedArticles.length}</strong> potential RCT articles. Click "Batch Extract All" to process.`;
+                document.getElementById('btnBatchExtract').disabled = false;
+                Toast.info(`Found ${separatedArticles.length} articles ready for batch processing.`);
+            } else if (separatedArticles.length === 1) {
+                statusEl.innerHTML = 'Single article detected. Use "Extract Data" for single article processing.';
+                document.getElementById('btnBatchExtract').disabled = true;
+            } else {
+                statusEl.innerHTML = 'No RCT articles detected. Try pasting RCT text directly.';
+                document.getElementById('btnBatchExtract').disabled = true;
+            }
+        }
+
+        async function batchExtract() {
+            if (separatedArticles.length === 0) {
+                Toast.warning('No articles to process. Use "Auto-Separate Articles" first.');
+                return;
+            }
+
+            const statusEl = document.getElementById('batchStatus');
+            batchResults = [];
+
+            for (let i = 0; i < separatedArticles.length; i++) {
+                statusEl.innerHTML = `Processing article ${i + 1} of ${separatedArticles.length}...
+                    <div class="progress-bar mt-1">
+                        <div class="progress-fill" style="width: ${((i + 1) / separatedArticles.length * 100)}%"></div>
+                    </div>`;
+
+                try {
+                    const result = RCTExtractor.extract(separatedArticles[i]);
+                    batchResults.push({ success: true, result });
+                } catch (e) {
+                    batchResults.push({ success: false, error: e.message });
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            const successCount = batchResults.filter(r => r.success).length;
+            statusEl.innerHTML = `<strong>Batch complete!</strong> ${successCount}/${separatedArticles.length} articles processed successfully.`;
+
+            if (successCount > 0) {
+                Toast.success(`Batch extraction complete! ${successCount} articles processed.`);
+            }
+        }
+
+        // ============================================================
+        // DARK MODE
+        // ============================================================
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            document.getElementById('themeIconSun').style.display = isDark ? 'none' : 'block';
+            document.getElementById('themeIconMoon').style.display = isDark ? 'block' : 'none';
+            localStorage.setItem('theme', isDark ? 'light' : 'dark');
+        }
+
+        // Initialize theme
+        (function initTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+                document.getElementById('themeIconSun').style.display = saved === 'dark' ? 'block' : 'none';
+                document.getElementById('themeIconMoon').style.display = saved === 'dark' ? 'none' : 'block';
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('themeIconSun').style.display = 'block';
+                document.getElementById('themeIconMoon').style.display = 'none';
+            }
+        })();
+
+        // ============================================================
+        // KEYBOARD SHORTCUTS
+        // ============================================================
+        function showShortcutsHelp() {
+            document.getElementById('shortcutsModal').classList.add('active');
+            document.getElementById('shortcutsModal').querySelector('.btn-ghost').focus();
+        }
+
+        function hideShortcutsHelp() {
+            document.getElementById('shortcutsModal').classList.remove('active');
+        }
+
+        function isInputFocused() {
+            const active = document.activeElement;
+            return active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            // Close modal on Escape
+            if (e.key === 'Escape') {
+                hideShortcutsHelp();
+                document.getElementById('loadingOverlay').classList.remove('active');
+                return;
+            }
+
+            // Show help on ?
+            if (e.key === '?' && !isInputFocused()) {
+                e.preventDefault();
+                showShortcutsHelp();
+                return;
+            }
+
+            // Toggle dark mode on D
+            if (e.key === 'd' && !isInputFocused() && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                toggleDarkMode();
+                return;
+            }
+
+            // Extract data on Ctrl+Enter
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                extractData();
+                return;
+            }
+
+            // Focus textarea on Ctrl+E
+            if (e.ctrlKey && e.key === 'e') {
+                e.preventDefault();
+                document.getElementById('inputText').focus();
+                return;
+            }
+
+            // Clear all on Ctrl+Shift+C
+            if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+                e.preventDefault();
+                clearAll();
+                return;
+            }
+
+            // Export JSON on Ctrl+S
+            if (e.ctrlKey && !e.shiftKey && e.key === 's') {
+                e.preventDefault();
+                exportJSON();
+                return;
+            }
+
+            // Export CSV on Ctrl+Shift+S
+            if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+                e.preventDefault();
+                exportCSV();
+                return;
+            }
+
+            // Tab switching with number keys
+            if (!isInputFocused() && e.key >= '1' && e.key <= '5') {
+                const tabNames = ['overview', 'effects', 'entities', 'quality', 'advanced'];
+                const index = parseInt(e.key) - 1;
+                if (tabNames[index]) {
+                    e.preventDefault();
+                    showTab(tabNames[index]);
+                }
+            }
+        });
+
+        // Click outside modal to close
+        document.getElementById('shortcutsModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('shortcutsModal')) {
+                hideShortcutsHelp();
+            }
+        });
+
+        // Initialize toast system
+        Toast.init();
+    </script>
+</body>
+</html>

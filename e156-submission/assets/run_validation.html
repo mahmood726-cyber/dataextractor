@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RCTExtractor v4.9.1 Validation Study</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #0f172a; color: #e2e8f0; max-width: 1200px; margin: 0 auto; }
+        h1 { color: #818cf8; }
+        h2 { color: #60a5fa; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+        h3 { color: #a5b4fc; }
+        .card { background: #1e293b; border-radius: 8px; padding: 20px; margin: 16px 0; }
+        .pass { color: #4ade80; }
+        .fail { color: #f87171; }
+        .warn { color: #fbbf24; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #334155; color: #f1f5f9; }
+        .accuracy-high { background: #166534; color: white; }
+        .accuracy-med { background: #854d0e; color: white; }
+        .accuracy-low { background: #991b1b; color: white; }
+        .comparison { display: flex; gap: 20px; flex-wrap: wrap; }
+        .comparison-card { flex: 1; min-width: 200px; text-align: center; padding: 20px; border-radius: 8px; }
+        .rctextractor { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+        .robotreviewer { background: linear-gradient(135deg, #0891b2, #0e7490); }
+        .chatgpt { background: linear-gradient(135deg, #059669, #047857); }
+        .metric-value { font-size: 3em; font-weight: bold; }
+        .metric-label { font-size: 0.9em; opacity: 0.8; }
+        pre { background: #0f172a; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 0.85em; }
+        button { padding: 12px 24px; background: #4f46e5; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; margin: 8px 4px; }
+        button:hover { background: #4338ca; }
+        .loading { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .field-detail { font-size: 0.85em; color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <h1>RCTExtractor v4.9.1-AI Validation Study</h1>
+    <p>Comparing extraction accuracy against ground truth from published RCTs</p>
+
+    <button onclick="runValidation()">Run Validation Study</button>
+    <button onclick="showMethodology()">View Methodology</button>
+
+    <div id="methodology" style="display:none;" class="card">
+        <h3>Validation Methodology</h3>
+        <p><strong>Ground Truth Source:</strong> Manually verified values from 5 landmark cardiovascular trials published in NEJM.</p>
+        <p><strong>Fields Validated:</strong></p>
+        <ul>
+            <li>Effect Measure (HR value)</li>
+            <li>95% CI Lower Bound</li>
+            <li>95% CI Upper Bound</li>
+            <li>Treatment Group N</li>
+            <li>Control Group N</li>
+            <li>Mean Age</li>
+            <li>Male Percentage</li>
+            <li>Trial Registration Number</li>
+        </ul>
+        <p><strong>Accuracy Calculation:</strong> Field-level accuracy with tolerances (numeric: 1-2%, counts: ±5)</p>
+        <p><strong>Comparison Benchmarks:</strong></p>
+        <ul>
+            <li>RobotReviewer: 71% overall accuracy (Marshall et al., JAMIA 2016)</li>
+            <li>ChatGPT-4o: 89-91% agreement (PLOS One 2025)</li>
+            <li>Human dual extraction: 78.3% inter-rater agreement</li>
+        </ul>
+    </div>
+
+    <div id="output"></div>
+
+    <!-- Load validation study data -->
+    <script src="validation_study.js"></script>
+
+    <!-- Load RCTExtractor -->
+    <script src="RCTExtractor_v4_8_AI.js"></script>
+
+    <script>
+function showMethodology() {
+    const el = document.getElementById('methodology');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function runValidation() {
+    const output = document.getElementById('output');
+    output.innerHTML = '<div class="card loading">Running validation study...</div>';
+
+    setTimeout(() => {
+        try {
+            const results = executeValidation();
+            displayResults(results);
+        } catch (e) {
+            output.innerHTML = `<div class="card fail">Error: ${e.message}<br><pre>${e.stack}</pre></div>`;
+        }
+    }, 100);
+}
+
+function executeValidation() {
+    if (typeof RCTExtractor === 'undefined') {
+        throw new Error('RCTExtractor not loaded');
+    }
+    if (typeof GROUND_TRUTH_CASES === 'undefined') {
+        throw new Error('Ground truth cases not loaded');
+    }
+
+    const allResults = [];
+
+    for (const testCase of GROUND_TRUTH_CASES) {
+        // Extract using RCTExtractor
+        const extracted = RCTExtractor.extract(testCase.text);
+
+        // Validate against ground truth
+        const validation = ValidationMetrics.validateCase(extracted, testCase.groundTruth);
+
+        allResults.push({
+            id: testCase.id,
+            source: testCase.source,
+            extracted: extracted,
+            groundTruth: testCase.groundTruth,
+            validation: validation
+        });
+    }
+
+    // Calculate summary statistics
+    const summary = ValidationMetrics.calculateSummary(allResults.map(r => r.validation));
+
+    return { cases: allResults, summary: summary };
+}
+
+function displayResults(results) {
+    const output = document.getElementById('output');
+    let html = '';
+
+    // Summary comparison cards
+    const rctAccuracy = (results.summary.overallAccuracy * 100).toFixed(1);
+    const rctClass = rctAccuracy >= 85 ? 'accuracy-high' : rctAccuracy >= 70 ? 'accuracy-med' : 'accuracy-low';
+
+    html += `
+    <h2>Accuracy Comparison</h2>
+    <div class="comparison">
+        <div class="comparison-card rctextractor">
+            <div class="metric-value">${rctAccuracy}%</div>
+            <div class="metric-label">RCTExtractor v4.9.1-AI</div>
+            <div class="field-detail">${results.summary.totalCases} trials validated</div>
+        </div>
+        <div class="comparison-card robotreviewer">
+            <div class="metric-value">71.0%</div>
+            <div class="metric-label">RobotReviewer</div>
+            <div class="field-detail">Marshall et al. JAMIA 2016</div>
+        </div>
+        <div class="comparison-card chatgpt">
+            <div class="metric-value">90.0%</div>
+            <div class="metric-label">ChatGPT-4o</div>
+            <div class="field-detail">PLOS One 2025</div>
+        </div>
+    </div>
+    `;
+
+    // Verdict
+    const diff = parseFloat(rctAccuracy) - 71.0;
+    const verdict = diff > 0 ?
+        `<span class="pass">RCTExtractor EXCEEDS RobotReviewer by ${diff.toFixed(1)} percentage points</span>` :
+        diff < 0 ?
+        `<span class="fail">RCTExtractor is ${Math.abs(diff).toFixed(1)} percentage points BELOW RobotReviewer</span>` :
+        `<span class="warn">RCTExtractor MATCHES RobotReviewer accuracy</span>`;
+
+    html += `<div class="card"><h3>Verdict</h3><p style="font-size:1.2em;">${verdict}</p></div>`;
+
+    // Per-field accuracy
+    html += `
+    <h2>Per-Field Accuracy</h2>
+    <div class="card">
+        <table>
+            <tr><th>Field</th><th>Accuracy</th><th>Correct</th><th>Total</th></tr>
+    `;
+
+    for (const [field, data] of Object.entries(results.summary.byField)) {
+        const acc = parseFloat(data.accuracy) || 0;
+        const cls = acc >= 90 ? 'pass' : acc >= 70 ? 'warn' : 'fail';
+        html += `<tr>
+            <td>${formatFieldName(field)}</td>
+            <td class="${cls}">${data.accuracy}</td>
+            <td>${data.correct}</td>
+            <td>${data.total}</td>
+        </tr>`;
+    }
+
+    html += '</table></div>';
+
+    // Per-case details
+    html += '<h2>Individual Trial Results</h2>';
+
+    for (const result of results.cases) {
+        const caseAcc = (result.validation.accuracy * 100).toFixed(1);
+        const caseClass = caseAcc >= 85 ? 'pass' : caseAcc >= 70 ? 'warn' : 'fail';
+
+        html += `
+        <div class="card">
+            <h3>${result.id} <span class="${caseClass}">(${caseAcc}% accurate)</span></h3>
+            <p class="field-detail">${result.source}</p>
+            <table>
+                <tr><th>Field</th><th>Extracted</th><th>Ground Truth</th><th>Result</th></tr>
+        `;
+
+        for (const [field, data] of Object.entries(result.validation.fields)) {
+            const status = data.match ? '<span class="pass">MATCH</span>' :
+                          data.error === 'missing' ? '<span class="fail">MISSING</span>' :
+                          data.error === 'no_truth' ? '<span class="warn">N/A</span>' :
+                          '<span class="fail">MISMATCH</span>';
+
+            const extracted = data.extracted !== undefined ?
+                (typeof data.extracted === 'number' ? data.extracted.toFixed(3) : data.extracted) :
+                'Not extracted';
+            const truth = data.truth !== undefined ?
+                (typeof data.truth === 'number' ? data.truth.toFixed(3) : data.truth) :
+                'N/A';
+
+            html += `<tr>
+                <td>${formatFieldName(field)}</td>
+                <td>${extracted}</td>
+                <td>${truth}</td>
+                <td>${status}</td>
+            </tr>`;
+        }
+
+        html += '</table></div>';
+    }
+
+    // Raw data export
+    html += `
+    <h2>Export Data</h2>
+    <div class="card">
+        <button onclick="exportJSON()">Export as JSON</button>
+        <button onclick="exportCSV()">Export as CSV</button>
+        <pre id="rawData" style="max-height:300px;overflow:auto;">${JSON.stringify(results.summary, null, 2)}</pre>
+    </div>
+    `;
+
+    output.innerHTML = html;
+
+    // Store for export
+    window.validationResults = results;
+}
+
+function formatFieldName(field) {
+    return field
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/^./, s => s.toUpperCase())
+        .replace('Ci Lo', 'CI Lower')
+        .replace('Ci Hi', 'CI Upper')
+        .replace('Treatment N', 'Treatment N')
+        .replace('Control N', 'Control N');
+}
+
+function exportJSON() {
+    if (!window.validationResults) return;
+    const blob = new Blob([JSON.stringify(window.validationResults, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rctextractor_validation_results.json';
+    a.click();
+}
+
+function exportCSV() {
+    if (!window.validationResults) return;
+    let csv = 'Trial,Field,Extracted,GroundTruth,Match\n';
+    for (const result of window.validationResults.cases) {
+        for (const [field, data] of Object.entries(result.validation.fields)) {
+            csv += `"${result.id}","${field}","${data.extracted || ''}","${data.truth || ''}","${data.match}"\n`;
+        }
+    }
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rctextractor_validation_results.csv';
+    a.click();
+}
+
+// Auto-run on load
+window.onload = function() {
+    setTimeout(runValidation, 500);
+};
+    </script>
+</body>
+</html>

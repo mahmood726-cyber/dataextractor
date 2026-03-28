@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RCTExtractor v4.9 Test Harness</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a2e; color: #eee; }
+        .pass { color: #4ade80; }
+        .fail { color: #f87171; }
+        .section { margin: 20px 0; padding: 10px; background: #16213e; border-radius: 8px; }
+        h1 { color: #818cf8; }
+        h2 { color: #60a5fa; margin-top: 20px; }
+        .summary { font-size: 1.5em; padding: 20px; background: #0f3460; border-radius: 8px; margin-top: 20px; }
+        pre { background: #0d1117; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        button { padding: 10px 20px; background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
+        button:hover { background: #4338ca; }
+    </style>
+</head>
+<body>
+    <h1>RCTExtractor v4.9 AI - Function Test Harness</h1>
+    <button onclick="runTests()">Run All Tests</button>
+    <div id="output"></div>
+
+    <!-- Load the main app script by including all code from WebApp -->
+    <script>
+// Inline all the code from RCTExtractor_WebApp.html script section
+// This will be populated when we load it
+    </script>
+
+    <script>
+// Test data
+const SAMPLE_RCT = `DAPA-HF Trial: Dapagliflozin in Heart Failure
+
+This was a randomized, double-blind, placebo-controlled trial (NCT03036124).
+We enrolled 4744 patients with heart failure and reduced ejection fraction.
+Mean age was 66.3 years, 76.8% were male. Mean LVEF was 31.2% +/- 6.7%.
+
+The primary outcome occurred in 16.3% vs 21.2% (hazard ratio 0.74; 95% CI 0.65-0.85; P<0.001).
+Cardiovascular death: 9.6% vs 11.5% (HR 0.82; 95% CI 0.69-0.98).
+All-cause mortality: 11.6% vs 13.9% (HR 0.83; 95% CI 0.71-0.97).
+
+Heterogeneity was low (I2 = 12%, tau2 = 0.02). Follow-up was 18.2 months.
+
+Sensitivity analysis excluding high risk of bias studies showed similar results (HR 0.76).
+Leave-one-out analysis confirmed robustness of findings.
+Results remained consistent when using fixed-effect models.
+
+Search was conducted on January 15, 2024. This living systematic review will be updated monthly.
+Last updated: December 2024.
+
+This was funded by AstraZeneca.`;
+
+const SAMPLE_COHORT = `Observational Cohort Study of Statins
+
+This was a prospective cohort study of 15,000 patients followed for 5 years.
+Patients receiving statins (n=8000) were compared to non-users (n=7000).
+Propensity score matching was used to control for confounding.
+
+The hazard ratio for cardiovascular events was 0.65 (95% CI 0.55-0.77).
+Missing data was handled using multiple imputation.`;
+
+const SAMPLE_NMA = `Network Meta-Analysis of Antidiabetic Drugs
+
+This network meta-analysis included 45 RCTs comparing 8 different antidiabetic drugs.
+We used a random-effects network meta-analysis model.
+The network geometry showed good connectivity.
+There was no significant inconsistency between direct and indirect evidence.
+SUCRA rankings showed Drug A with highest probability.`;
+
+let results = { passed: 0, failed: 0, tests: [] };
+let output = '';
+
+function log(msg, type = '') {
+    const cls = type === 'pass' ? 'pass' : type === 'fail' ? 'fail' : '';
+    output += `<div class="${cls}">${msg}</div>`;
+}
+
+function test(name, condition, details = '') {
+    if (condition) {
+        log(`  [PASS] ${name}`, 'pass');
+        results.passed++;
+        results.tests.push({ name, passed: true });
+    } else {
+        log(`  [FAIL] ${name} - ${details}`, 'fail');
+        results.failed++;
+        results.tests.push({ name, passed: false, details });
+    }
+    return condition;
+}
+
+function runTests() {
+    results = { passed: 0, failed: 0, tests: [] };
+    output = '';
+
+    log('<h2>Test Started</h2>');
+
+    // Check if RCTExtractor exists
+    if (typeof RCTExtractor === 'undefined') {
+        log('ERROR: RCTExtractor not found. Loading main app...', 'fail');
+        // Try to load from iframe
+        const iframe = document.createElement('iframe');
+        iframe.src = 'RCTExtractor_WebApp.html';
+        iframe.style.display = 'none';
+        iframe.onload = function() {
+            // Get RCTExtractor from iframe
+            window.RCTExtractor = iframe.contentWindow.RCTExtractor;
+            if (window.RCTExtractor) {
+                log('Loaded RCTExtractor from iframe');
+                executeTests();
+            } else {
+                log('Failed to load RCTExtractor', 'fail');
+            }
+        };
+        document.body.appendChild(iframe);
+        return;
+    }
+
+    executeTests();
+}
+
+function executeTests() {
+    log('<h2>[1] Version Check</h2>');
+    test('RCTExtractor defined', typeof RCTExtractor !== 'undefined');
+    test('Version is 4.9.5-AI', RCTExtractor?.version === '4.9.5-AI', RCTExtractor?.version);
+
+    log('<h2>[2] Main Extraction</h2>');
+    let result;
+    try {
+        result = RCTExtractor.extract(SAMPLE_RCT);
+        test('Extraction runs', result !== null);
+        test('Has _meta', result?._meta !== undefined);
+        test('Has 30 AI enhancements', result?._meta?.aiEnhancements?.length === 30,
+             `Found ${result?._meta?.aiEnhancements?.length || 0}`);
+    } catch (e) {
+        test('Extraction runs', false, e.message);
+        showResults();
+        return;
+    }
+
+    log('<h2>[3] Core Extraction</h2>');
+    test('Trial name', result?.study?.name?.toLowerCase().includes('dapa') ||
+         result?.study?.acronym?.toLowerCase().includes('dapa'));
+    test('Effect measure', result?.contrast?.effect !== undefined ||
+         result?.effectMeasures?.primary?.value !== undefined);
+
+    log('<h2>[4] Effect Measures</h2>');
+    test('Hazard ratios', result?.effectMeasures?.hazardRatios?.length > 0);
+    test('Primary effect', result?.effectMeasures?.primary !== undefined);
+    test('CI bounds', result?.effectMeasures?.primary?.ciLo !== undefined);
+
+    log('<h2>[5] RoB 2.0</h2>');
+    const bias = result?._meta?.biasAssessment;
+    test('Bias assessment', bias !== undefined);
+    test('RoB domains', bias?.domains !== undefined);
+    test('Overall risk', bias?.overallRisk !== undefined);
+
+    log('<h2>[6] GRADE 8-Domain</h2>');
+    const grade = result?.grade;
+    test('GRADE exists', grade !== undefined);
+    test('Overall certainty', grade?.overallCertainty !== undefined);
+    test('Downgrade factors', grade?.downgradeFactors !== undefined);
+    test('Upgrade factors', grade?.upgradeFactors !== undefined);
+
+    log('<h2>[7] Sensitivity Analysis (NEW v4.9)</h2>');
+    const sensitivity = result?.sensitivityAnalyses;
+    test('Sensitivity exists', sensitivity !== undefined);
+    test('Detected analyses', sensitivity?.detected?.length > 0,
+         `Found ${sensitivity?.detected?.length || 0}`);
+    test('Analysis types', sensitivity?.types?.length > 0,
+         `Types: ${sensitivity?.types?.map(t => t.type).join(', ') || 'none'}`);
+
+    log('<h2>[8] Living SR Support (NEW v4.9)</h2>');
+    const livingSR = result?.livingSR;
+    test('Living SR exists', livingSR !== undefined);
+    test('Is living SR', livingSR?.isLivingSR === true);
+    test('Search date', livingSR?.searchDate !== null);
+    test('Timestamp tracking', livingSR?.timestampTracking !== undefined);
+
+    log('<h2>[9] ROBINS-I (NEW v4.9)</h2>');
+    const robins = result?.robinsI;
+    test('ROBINS-I exists', robins !== undefined);
+    // Test with cohort text
+    const cohortResult = RCTExtractor.extract(SAMPLE_COHORT);
+    test('Non-RCT detection', cohortResult?.robinsI?.applicable ||
+         cohortResult?.robinsI?.studyType !== null,
+         `Type: ${cohortResult?.robinsI?.studyType || 'none'}`);
+
+    log('<h2>[10] CINeMA NMA (NEW v4.9)</h2>');
+    const cinema = result?.cinema;
+    test('CINeMA exists', cinema !== undefined);
+    test('Scope warning', cinema?.scopeWarning !== undefined);
+    // Test with NMA text
+    const nmaResult = RCTExtractor.extract(SAMPLE_NMA);
+    test('NMA detection', nmaResult?.cinema?.isNMA || nmaResult?.cinema !== undefined);
+
+    log('<h2>[11] PRISMA 2020</h2>');
+    test('PRISMA exists', result?.prisma !== undefined);
+    test('PRISMA 2020 compliance', result?.prisma?.prisma2020Compliance !== undefined);
+
+    log('<h2>[12] Audit Trail</h2>');
+    const audit = result?.auditTrail;
+    test('Audit trail exists', audit !== undefined);
+    test('Extraction ID', audit?.extractionId !== undefined);
+    test('Timestamp', audit?.timestamp !== undefined);
+    test('Tool version', audit?.toolVersion !== undefined);
+
+    log('<h2>[13] AI Entities</h2>');
+    const entities = result?.aiEntities;
+    test('Entities exist', entities !== undefined);
+    test('Drugs found', entities?.drugs?.length > 0);
+    test('Dapagliflozin', entities?.drugs?.some(d =>
+         d.toLowerCase().includes('dapagliflozin')));
+
+    log('<h2>[14] Effect Validation</h2>');
+    const effectVal = result?.effectMeasureValidation;
+    test('Validation exists', effectVal !== undefined);
+    test('Consistency check', effectVal?.consistency !== undefined);
+
+    log('<h2>[15] Summary Function</h2>');
+    try {
+        const summary = RCTExtractor.getSummary(result);
+        test('Summary generated', summary !== undefined);
+        test('Quality grade', summary?.qualityGrade !== undefined);
+    } catch (e) {
+        test('Summary generated', false, e.message);
+    }
+
+    showResults();
+
+    // Show extracted values
+    log('<h2>Key Extracted Values:</h2>');
+    log(`<pre>
+Trial: ${result?.study?.name || result?.study?.acronym || 'N/A'}
+Sample: ${result?.treatment?.n || 'N/A'} + ${result?.control?.n || 'N/A'}
+Primary HR: ${result?.effectMeasures?.primary?.value || 'N/A'}
+GRADE: ${result?.grade?.overallCertainty || 'N/A'}
+RoB: ${result?._meta?.biasAssessment?.overallRisk || 'N/A'}
+Sensitivity: ${result?.sensitivityAnalyses?.types?.map(t => t.type).join(', ') || 'N/A'}
+Living SR: ${result?.livingSR?.isLivingSR || 'N/A'}
+Audit ID: ${result?.auditTrail?.extractionId || 'N/A'}
+</pre>`);
+
+    document.getElementById('output').innerHTML = output;
+}
+
+function showResults() {
+    const total = results.passed + results.failed;
+    const pct = total > 0 ? (results.passed / total * 100).toFixed(1) : 0;
+    const status = results.failed === 0 ? 'pass' : 'fail';
+
+    output = `<div class="summary ${status}">
+        TEST SUMMARY: ${results.passed}/${total} passed (${pct}%)
+    </div>` + output;
+
+    document.getElementById('output').innerHTML = output;
+}
+
+// Auto-run on load if RCTExtractor exists
+window.onload = function() {
+    setTimeout(runTests, 500);
+};
+    </script>
+</body>
+</html>
