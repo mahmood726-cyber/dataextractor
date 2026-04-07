@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use RCTExtractor, please cite it as below."
+type: software
+title: "RCTExtractor"
+version: "5.1.0"
+license: MIT
+repository-code: "https://github.com/rctextractor/rctextractor"
+abstract: >-
+  AI-enhanced extraction engine for randomized controlled trial data from
+  medical literature with web, CLI, server, and package interfaces.
+keywords:
+  - clinical trials
+  - data extraction
+  - evidence synthesis
+  - NLP
+  - systematic review
+authors:
+  - family-names: Ahmad
+    given-names: Mahmood
+preferred-citation:
+  type: software
+  title: "RCTExtractor"
+  authors:
+    - family-names: Ahmad
+      given-names: Mahmood
+  year: 2026
+  repository-code: "https://github.com/rctextractor/rctextractor"
