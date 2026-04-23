@@ -941,15 +941,61 @@ const RCTExtractor = {
             }
         }
 
-        // Treatment/control arm extraction
-        const armPattern = /(?:treatment|intervention|active)\s+(?:group|arm)?\s*\(?n\s*=\s*(\d+)/gi;
-        const controlPattern = /(?:control|placebo|comparator)\s+(?:group|arm)?\s*\(?n\s*=\s*(\d+)/gi;
+        // Treatment/control arm extraction - Enhanced v5.2.0
+        // Format 1: drug (n=X) or placebo (n=Y)
+        const nFormatMatch = text.match(/(?:randomized?|assigned|allocated)\s+to\s+(?:receive\s+)?(\w+(?:[- ]\w+)?)[^()]*\(n\s*[=:]\s*(\d[\d,]*)\)[^()]*(?:or\s+)?(?:placebo|control)\s*\(n\s*[=:]\s*(\d[\d,]*)\)/i);
+        if (nFormatMatch) {
+            result.treatment.n = parseInt(nFormatMatch[2].replace(/,/g, ''));
+            result.control.n = parseInt(nFormatMatch[3].replace(/,/g, ''));
+        }
 
-        let armMatch = armPattern.exec(text);
-        if (armMatch) result.treatment.n = parseInt(armMatch[1]);
+        // Format 2: X patients received drug, Y received placebo
+        if (!result.treatment.n || !result.control.n) {
+            const receivedMatch = text.match(/(\d[\d,]*)\s+(?:patients?\s+)?received\s+(\w+(?:[–-]\w+)?)[^,]*,\s*(\d[\d,]*)\s+(?:patients?\s+)?received\s+(\w+(?:[–-]\w+)?)/i);
+            if (receivedMatch) {
+                const n1 = parseInt(receivedMatch[1].replace(/,/g, ''));
+                const n2 = parseInt(receivedMatch[3].replace(/,/g, ''));
+                const drug2 = receivedMatch[4].toLowerCase();
+                const isControl = /placebo|enalapril|warfarin|usual|care|standard|control|sham/i.test(drug2);
+                if (isControl) {
+                    if (!result.treatment.n) result.treatment.n = n1;
+                    if (!result.control.n) result.control.n = n2;
+                } else {
+                    if (!result.treatment.n) result.treatment.n = n1;
+                    if (!result.control.n) result.control.n = n2;
+                }
+            }
+        }
 
-        let controlMatch = controlPattern.exec(text);
-        if (controlMatch) result.control.n = parseInt(controlMatch[1]);
+        // Format 3: drug group (X patients) vs placebo group (Y patients)
+        if (!result.treatment.n || !result.control.n) {
+            const groupMatch = text.match(/(\w+)\s+group\s*\((\d[\d,]*)\s*patients?\)[^()]*(?:vs\.?|versus|and)\s*(\w+)\s+group\s*\((\d[\d,]*)\s*patients?\)/i);
+            if (groupMatch) {
+                const n1 = parseInt(groupMatch[2].replace(/,/g, ''));
+                const n2 = parseInt(groupMatch[4].replace(/,/g, ''));
+                const group2 = groupMatch[3].toLowerCase();
+                if (/placebo|control|usual|standard|sham/i.test(group2)) {
+                    if (!result.treatment.n) result.treatment.n = n1;
+                    if (!result.control.n) result.control.n = n2;
+                } else {
+                    if (!result.treatment.n) result.treatment.n = n1;
+                    if (!result.control.n) result.control.n = n2;
+                }
+            }
+        }
+
+        // Format 4: Legacy patterns (fallback)
+        if (!result.treatment.n) {
+            const armPattern = /(?:treatment|intervention|active)\s+(?:group|arm)?\s*\(?n\s*=\s*(\d+)/gi;
+            const armMatch = armPattern.exec(text);
+            if (armMatch) result.treatment.n = parseInt(armMatch[1]);
+        }
+
+        if (!result.control.n) {
+            const controlPattern = /(?:control|placebo|comparator)\s+(?:group|arm)?\s*\(?n\s*=\s*(\d+)/gi;
+            const controlMatch = controlPattern.exec(text);
+            if (controlMatch) result.control.n = parseInt(controlMatch[1]);
+        }
 
         // Age extraction
         const agePattern = /(?:mean|median)?\s*age[:\s]*(\d+\.?\d*)\s*(?:±|\+\/-|years)/gi;
@@ -1369,10 +1415,286 @@ const RCTExtractor = {
 };
 
 // ============================================================
+// TRUTHCERT-INSPIRED VALIDATION v1.0
+// Corruption detection based on TC-RCT pack patterns
+// ============================================================
+
+const CorruptionDetector = {
+    DETECTION_RATES: {
+        arm_swap: 0.92, unit_shift: 0.90, timepoint_shift: 0.88,
+        row_bleed: 0.78, endpoint_swap: 0.72, ocr_number_confuse: 0.60
+    },
+
+    detectAll(extracted, sourceText) {
+        const results = {
+            corruptions: [],
+            warnings: [],
+            confidence: 1.0,
+            passed: true
+        };
+
+        const detections = [
+            this.detectArmSwap(extracted, sourceText),
+            this.detectUnitShift(extracted, sourceText),
+            this.detectRowBleed(extracted, sourceText),
+            this.detectTimepointShift(extracted, sourceText)
+        ];
+
+        for (const detection of detections) {
+            if (detection.detected) {
+                results.corruptions.push(detection);
+                results.passed = false;
+                results.confidence *= (1 - detection.severity);
+            }
+            if (detection.warning) {
+                results.warnings.push({ type: detection.type, message: detection.warning });
+            }
+        }
+
+        results.confidence = Math.max(0, results.confidence);
+        return results;
+    },
+
+    detectArmSwap(extracted, sourceText) {
+        const result = { type: 'arm_swap', detected: false, severity: 0.9, evidence: [], warning: null };
+        const textLower = sourceText.toLowerCase();
+        const effect = extracted.contrast?.effect || extracted.effectMeasures?.primary?.value;
+
+        if (!effect) return result;
+
+        const benefitIndicators = ['reduced', 'decreased', 'lower', 'improved', 'beneficial', 'protective'];
+        const harmIndicators = ['increased', 'higher', 'worse', 'more events', 'harmful'];
+
+        const hasBenefitLanguage = benefitIndicators.some(ind => textLower.includes(ind));
+        const hasHarmLanguage = harmIndicators.some(ind => textLower.includes(ind));
+
+        if (effect < 1 && hasHarmLanguage && !hasBenefitLanguage) {
+            result.detected = true;
+            result.evidence.push(`Effect ${effect.toFixed(2)} < 1 but text indicates harm`);
+        }
+        if (effect > 1 && hasBenefitLanguage && !hasHarmLanguage) {
+            result.detected = true;
+            result.evidence.push(`Effect ${effect.toFixed(2)} > 1 but text indicates benefit`);
+        }
+
+        return result;
+    },
+
+    detectUnitShift(extracted, sourceText) {
+        const result = { type: 'unit_shift', detected: false, severity: 0.7, evidence: [], warning: null };
+        const effect = extracted.contrast?.effect;
+        const ciLo = extracted.contrast?.ciLo;
+        const ciHi = extracted.contrast?.ciHi;
+
+        if (effect && ciLo && ciHi && effect > 0 && ciLo > 0 && ciHi > 0) {
+            const logEffect = Math.log(effect);
+            const logCiLo = Math.log(ciLo);
+            const logCiHi = Math.log(ciHi);
+            const lowerDist = logEffect - logCiLo;
+            const upperDist = logCiHi - logEffect;
+
+            if (lowerDist > 0 && upperDist > 0) {
+                const asymmetry = Math.abs(lowerDist - upperDist) / Math.max(lowerDist, upperDist);
+                if (asymmetry > 0.5) {
+                    result.warning = 'CI asymmetry on log scale suggests possible scale error';
+                }
+            }
+        }
+
+        return result;
+    },
+
+    detectRowBleed(extracted, sourceText) {
+        const result = { type: 'row_bleed', detected: false, severity: 0.5, evidence: [], warning: null };
+
+        const ciLo = extracted.contrast?.ciLo;
+        const ciHi = extracted.contrast?.ciHi;
+        const effect = extracted.contrast?.effect;
+
+        if (ciLo === ciHi && ciLo !== undefined) {
+            result.detected = true;
+            result.evidence.push('CI lower equals CI upper - likely row bleed');
+        }
+
+        if (effect !== undefined && (effect === ciLo || effect === ciHi)) {
+            result.warning = 'Effect equals CI bound - possible row bleed';
+        }
+
+        const treatmentN = extracted.treatment?.n;
+        const controlN = extracted.control?.n;
+        if (treatmentN && controlN && treatmentN === controlN) {
+            const nMatches = sourceText.match(/n\s*=?\s*(\d{2,})/gi);
+            if (nMatches && nMatches.length >= 2) {
+                const uniqueNs = [...new Set(nMatches.map(m => parseInt(m.match(/\d+/)[0])))];
+                if (uniqueNs.length > 1 && !uniqueNs.includes(treatmentN)) {
+                    result.warning = 'Treatment/control N identical but text shows different values';
+                }
+            }
+        }
+
+        return result;
+    },
+
+    detectTimepointShift(extracted, sourceText) {
+        const result = { type: 'timepoint_shift', detected: false, severity: 0.6, evidence: [], warning: null };
+        const textLower = sourceText.toLowerCase();
+        const extractedFollowup = extracted.followup?.median || extracted.followup?.duration ||
+                                  extracted.followupNormalized?.normalized;
+
+        if (!extractedFollowup) return result;
+
+        const followupPatterns = [
+            /follow[- ]?up[^0-9]*(\d+\.?\d*)\s*(years?|months?|weeks?)/gi,
+            /(\d+\.?\d*)\s*(years?|months?)\s*(?:of\s*)?follow[- ]?up/gi
+        ];
+
+        const foundFollowups = [];
+        for (const pattern of followupPatterns) {
+            let match;
+            while ((match = pattern.exec(textLower)) !== null) {
+                const value = parseFloat(match[1]);
+                const unit = match[2].toLowerCase();
+                let months = value;
+                if (unit.startsWith('year')) months = value * 12;
+                if (unit.startsWith('week')) months = value / 4.33;
+                foundFollowups.push({ value, unit, months });
+            }
+        }
+
+        if (foundFollowups.length > 0) {
+            const matches = foundFollowups.some(f => Math.abs(f.months - extractedFollowup) < 0.5);
+            if (!matches) {
+                const closestMatch = foundFollowups.reduce((a, b) =>
+                    Math.abs(a.months - extractedFollowup) < Math.abs(b.months - extractedFollowup) ? a : b
+                );
+                if (Math.abs(closestMatch.months - extractedFollowup * 12) < 0.5) {
+                    result.detected = true;
+                    result.evidence.push('Possible years/months confusion');
+                }
+            }
+        }
+
+        return result;
+    }
+};
+
+const ValidationGates = {
+    validate(extracted, sourceText) {
+        const results = {
+            passed: true,
+            gates: {},
+            confidence: 1.0,
+            recommendation: null
+        };
+
+        // Gate B3: Structural Validation
+        results.gates.B3 = this.runGateB3(extracted);
+        if (!results.gates.B3.passed) {
+            results.passed = false;
+            results.confidence *= 0.7;
+        }
+
+        // Gate B8: Adversarial Validation (corruption detection)
+        results.gates.B8 = this.runGateB8(extracted, sourceText);
+        if (!results.gates.B8.passed) {
+            results.passed = false;
+            results.confidence *= 0.6;
+        }
+
+        // Generate recommendation
+        if (results.passed) {
+            results.recommendation = 'Extraction passed all validation gates - suitable for use';
+        } else if (results.confidence >= 0.7) {
+            results.recommendation = 'Minor validation issues - manual review recommended';
+        } else if (results.confidence >= 0.5) {
+            results.recommendation = 'Significant validation issues - careful manual verification required';
+        } else {
+            results.recommendation = 'Major validation failures - consider re-extraction or manual extraction';
+        }
+
+        return results;
+    },
+
+    runGateB3(extracted) {
+        const result = { name: 'B3_Structural', passed: true, checks: [] };
+
+        // Arithmetic check
+        const arithCheck = this.checkArithmetic(extracted);
+        result.checks.push({ name: 'V-RCT-ARITH', passed: arithCheck.passed, details: arithCheck.issues });
+        if (!arithCheck.passed) result.passed = false;
+
+        // CI ordering check
+        const ciCheck = this.checkCIOrdering(extracted);
+        result.checks.push({ name: 'CI_ORDERING', passed: ciCheck.passed, details: ciCheck.message });
+        if (!ciCheck.passed) result.passed = false;
+
+        return result;
+    },
+
+    runGateB8(extracted, sourceText) {
+        const result = { name: 'B8_Adversarial', passed: true, checks: [] };
+        const corruptions = CorruptionDetector.detectAll(extracted, sourceText);
+
+        result.checks.push({
+            name: 'V-RCT-ADVERSARIAL',
+            passed: corruptions.passed,
+            details: corruptions.corruptions.map(c => `${c.type}: ${c.evidence.join(', ')}`),
+            warnings: corruptions.warnings
+        });
+
+        if (!corruptions.passed) result.passed = false;
+        return result;
+    },
+
+    checkArithmetic(extracted) {
+        const issues = [];
+        const treatN = extracted.treatment?.n;
+        const controlN = extracted.control?.n;
+        const totalN = extracted.population?.n || extracted.study?.n;
+
+        if (treatN && controlN && totalN) {
+            const expectedTotal = treatN + controlN;
+            if (Math.abs(expectedTotal - totalN) > 10) {
+                issues.push(`Total N (${totalN}) ≠ Treatment (${treatN}) + Control (${controlN})`);
+            }
+        }
+
+        const treatEvents = extracted.treatment?.events;
+        if (treatN && treatEvents && treatEvents > treatN) {
+            issues.push(`Treatment events (${treatEvents}) > Treatment N (${treatN})`);
+        }
+
+        return { passed: issues.length === 0, issues };
+    },
+
+    checkCIOrdering(extracted) {
+        const effect = extracted.contrast?.effect;
+        const ciLo = extracted.contrast?.ciLo;
+        const ciHi = extracted.contrast?.ciHi;
+
+        if (effect === undefined || ciLo === undefined || ciHi === undefined) {
+            return { passed: true, message: 'CI values not all present' };
+        }
+
+        if (ciLo >= effect || effect >= ciHi) {
+            return { passed: false, message: `CI ordering violated: ${ciLo} < ${effect} < ${ciHi}` };
+        }
+
+        if (ciLo >= ciHi) {
+            return { passed: false, message: `CI bounds inverted: lower (${ciLo}) >= upper (${ciHi})` };
+        }
+
+        return { passed: true, message: 'CI ordering correct' };
+    }
+};
+
+// ============================================================
 // UI FUNCTIONS
 // ============================================================
 
 let currentResult = null;
+let currentValidation = null;
+let currentSourceText = '';
 
 function extractData() {
     const text = document.getElementById('inputText').value.trim();
@@ -1381,6 +1703,7 @@ function extractData() {
         return;
     }
 
+    currentSourceText = text;
     document.getElementById('loadingIndicator').classList.add('active');
     document.getElementById('quickSummary').classList.add('hidden');
 
@@ -1388,6 +1711,10 @@ function extractData() {
         try {
             currentResult = RCTExtractor.extract(text);
             const summary = RCTExtractor.getSummary(currentResult);
+
+            // Run TruthCert-inspired validation
+            currentValidation = ValidationGates.validate(currentResult, text);
+            currentResult._validation = currentValidation;
 
             displayQuickSummary(summary, currentResult);
             displayOverview(currentResult);
@@ -1719,6 +2046,77 @@ function displayAdvanced(result) {
     const prisma = result.prisma || {};
     const subgroups = result.subgroupAnalyses || {};
     const followup = result.followupNormalized || {};
+    const validation = result._validation || currentValidation;
+
+    // TruthCert-Inspired Validation Section (NEW v5.2.0)
+    if (validation) {
+        const passedClass = validation.passed ? 'success' : 'danger';
+        const confidencePercent = (validation.confidence * 100).toFixed(0);
+
+        html += '<h3>🔍 TruthCert-Inspired Validation</h3>';
+        html += '<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">Sequential validation gates based on TC-RCT pack patterns</p>';
+
+        // Overall Status
+        html += '<div class="results-grid" style="margin-bottom:1rem">';
+        html += `<div class="result-item" style="background:var(--${passedClass});color:white">
+            <label style="color:rgba(255,255,255,0.8)">Overall Status</label>
+            <div class="value" style="color:white;font-size:1.3rem">${validation.passed ? '✓ PASSED' : '⚠ ISSUES FOUND'}</div>
+        </div>`;
+        html += `<div class="result-item">
+            <label>Confidence</label>
+            <div class="value">${confidencePercent}%</div>
+            <div class="prisma-bar"><div class="prisma-fill" style="width:${confidencePercent}%;background:var(--${passedClass})"></div></div>
+        </div>`;
+        html += '</div>';
+
+        // Validation Gates
+        html += '<div class="table-container"><table>';
+        html += '<thead><tr><th>Gate</th><th>Status</th><th>Checks</th></tr></thead><tbody>';
+
+        // B3 Gate
+        const b3 = validation.gates?.B3 || {};
+        const b3Class = b3.passed ? 'success' : 'danger';
+        const b3Checks = (b3.checks || []).map(c =>
+            `<span style="color:var(--${c.passed ? 'success' : 'danger'})">${c.passed ? '✓' : '✗'}</span> ${c.name}`
+        ).join('<br>');
+        html += `<tr>
+            <td><strong>B3: Structural</strong><br><span style="font-size:0.75rem;color:var(--text-muted)">Arithmetic, CI ordering</span></td>
+            <td><span class="quality-badge" style="background:var(--${b3Class})">${b3.passed ? 'PASS' : 'FAIL'}</span></td>
+            <td style="font-size:0.85rem">${b3Checks || 'No checks'}</td>
+        </tr>`;
+
+        // B8 Gate
+        const b8 = validation.gates?.B8 || {};
+        const b8Class = b8.passed ? 'success' : 'danger';
+        const b8Checks = (b8.checks || []).map(c => {
+            let details = '';
+            if (c.details && c.details.length > 0) {
+                details = '<br>' + c.details.map(d => `<span style="color:var(--danger);font-size:0.75rem">⚠ ${d}</span>`).join('<br>');
+            }
+            if (c.warnings && c.warnings.length > 0) {
+                details += '<br>' + c.warnings.map(w => `<span style="color:var(--warning);font-size:0.75rem">⚡ ${w.type}: ${w.message}</span>`).join('<br>');
+            }
+            return `<span style="color:var(--${c.passed ? 'success' : 'danger'})">${c.passed ? '✓' : '✗'}</span> ${c.name}${details}`;
+        }).join('<br>');
+        html += `<tr>
+            <td><strong>B8: Adversarial</strong><br><span style="font-size:0.75rem;color:var(--text-muted)">Corruption detection</span></td>
+            <td><span class="quality-badge" style="background:var(--${b8Class})">${b8.passed ? 'PASS' : 'FAIL'}</span></td>
+            <td style="font-size:0.85rem">${b8Checks || 'No checks'}</td>
+        </tr>`;
+
+        html += '</tbody></table></div>';
+
+        // Recommendation
+        if (validation.recommendation) {
+            const recClass = validation.passed ? 'info' : (validation.confidence >= 0.5 ? 'warning' : 'error');
+            html += `<div class="warning-box ${recClass}" style="margin-top:1rem">
+                <span class="warning-icon">${validation.passed ? 'ℹ️' : '⚠️'}</span>
+                <div><strong>Recommendation:</strong> ${validation.recommendation}</div>
+            </div>`;
+        }
+
+        html += '<hr style="margin:2rem 0;border:none;border-top:1px solid var(--border)">';
+    }
 
     // RoB 2.0 Section
     html += '<h3>Cochrane Risk of Bias 2.0</h3>';

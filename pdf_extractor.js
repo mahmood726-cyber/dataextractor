@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * PDF EXTRACTOR MODULE for RCTExtractor
  * ======================================
@@ -16,10 +17,37 @@
  *   const { extractPdfText, extractAndProcess } = require('./pdf_extractor.js');
  *   const text = await extractPdfText('path/to/file.pdf');
  *   const result = await extractAndProcess('path/to/file.pdf');
+ *
+ * @version 4.9.5
+ * @license MIT
  */
+
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
+
+const VERSION = '4.9.5';
+
+// Color utilities
+const isColorSupported = process.stdout.isTTY && !process.env.NO_COLOR;
+const colors = {
+    reset: isColorSupported ? '\x1b[0m' : '',
+    bold: isColorSupported ? '\x1b[1m' : '',
+    dim: isColorSupported ? '\x1b[2m' : '',
+    red: isColorSupported ? '\x1b[31m' : '',
+    green: isColorSupported ? '\x1b[32m' : '',
+    yellow: isColorSupported ? '\x1b[33m' : '',
+    cyan: isColorSupported ? '\x1b[36m' : ''
+};
+
+function colorize(text, color) {
+    return `${colors[color] || ''}${text}${colors.reset}`;
+}
+
+function bold(text) {
+    return `${colors.bold}${text}${colors.reset}`;
+}
 
 // Lazy load pdf-parse to avoid issues if not installed
 let pdfParse = null;
@@ -306,6 +334,7 @@ function extractTables(text) {
  * @param {boolean} options.reconstructParagraphs - Attempt to reconstruct paragraphs (default: true)
  * @param {boolean} options.extractTables - Extract table data (default: false)
  * @param {number} options.maxPages - Maximum pages to extract (default: all)
+ * @param {boolean} options.skipSecurity - Skip security validation (not recommended)
  * @returns {Promise<object>} - Extracted text and metadata
  */
 async function extractPdfText(filePath, options = {}) {
@@ -313,16 +342,43 @@ async function extractPdfText(filePath, options = {}) {
         keepReferences = false,
         reconstructParagraphs: doReconstruct = true,
         extractTables: doExtractTables = false,
-        maxPages = null
+        maxPages = null,
+        skipSecurity = false
     } = options;
+
+    // SECURITY: Validate file path
+    if (!skipSecurity) {
+        try {
+            const { SecurityModule } = require('./RCTExtractor_v4_8_AI.js');
+            const pathValidation = SecurityModule.validateFilePath(filePath);
+            if (!pathValidation.isValid) {
+                throw new Error(`Security: Invalid file path - ${pathValidation.errors.join(', ')}`);
+            }
+        } catch (e) {
+            // SecurityModule not available, perform basic validation
+            if (filePath.includes('..') || filePath.includes('\x00')) {
+                throw new Error('Security: Path traversal or null byte detected');
+            }
+        }
+    }
 
     // Validate file exists
     if (!fs.existsSync(filePath)) {
         throw new Error(`PDF file not found: ${filePath}`);
     }
 
+    // SECURITY: Check file extension
+    if (!filePath.toLowerCase().endsWith('.pdf')) {
+        throw new Error('Security: File must have .pdf extension');
+    }
+
     // Read PDF file
     const dataBuffer = fs.readFileSync(filePath);
+
+    // SECURITY: Validate PDF magic bytes
+    if (dataBuffer.length < 5 || dataBuffer.slice(0, 5).toString() !== '%PDF-') {
+        throw new Error('Security: File does not appear to be a valid PDF');
+    }
 
     // Parse PDF
     const pdfParseLib = getPdfParse();
@@ -336,6 +392,22 @@ async function extractPdfText(filePath, options = {}) {
 
     // Extract raw text
     let text = pdfData.text || '';
+
+    // SECURITY: Sanitize extracted text
+    if (!skipSecurity) {
+        try {
+            const { SecurityModule } = require('./RCTExtractor_v4_8_AI.js');
+            const sanitization = SecurityModule.sanitizeInput(text);
+            text = sanitization.sanitized;
+            if (sanitization.warnings.length > 0) {
+                console.warn('[pdf_extractor] Security warnings:', sanitization.warnings.join('; '));
+            }
+        } catch (e) {
+            // SecurityModule not available, perform basic sanitization
+            // Remove null bytes and control characters
+            text = text.replace(/\x00/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+        }
+    }
 
     // Clean PDF artifacts
     text = cleanPdfArtifacts(text);
@@ -469,31 +541,51 @@ function listPdfFiles(dirPath, recursive = false) {
 async function main() {
     const args = process.argv.slice(2);
 
+    if (args.includes('--version') || args.includes('-v')) {
+        console.log(`${colorize('rct-pdf', 'cyan')} version ${bold(VERSION)}`);
+        process.exit(0);
+    }
+
     if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
         console.log(`
-PDF Extractor for RCTExtractor
-==============================
+${bold(colorize('RCT PDF Extractor', 'cyan'))} v${VERSION}
+${colorize('Extract clinical trial data from PDF files', 'dim')}
 
-Usage:
-  node pdf_extractor.js <file.pdf> [options]
-  node pdf_extractor.js --dir <directory> [options]
+${bold('USAGE')}
+  ${colorize('rct-pdf', 'green')} <file.pdf> [options]
+  ${colorize('rct-pdf', 'green')} --dir <directory> [options]
 
-Options:
-  --dir <path>        Extract from all PDFs in directory
-  --recursive         Recurse into subdirectories (with --dir)
-  --output <path>     Write JSON output to file
-  --text-only         Output only extracted text (no RCT processing)
-  --keep-refs         Keep references section
-  --max-pages <n>     Maximum pages to extract
-  --extract-tables    Attempt to extract table data
-  --quiet             Suppress progress output
-  --help, -h          Show this help message
+${bold('OPTIONS')}
+  ${colorize('-d, --dir', 'yellow')} <path>        Extract from all PDFs in directory
+  ${colorize('-r, --recursive', 'yellow')}         Recurse into subdirectories (with --dir)
+  ${colorize('-o, --output', 'yellow')} <path>     Write JSON output to file
+  ${colorize('--text-only', 'yellow')}             Output only extracted text (no RCT processing)
+  ${colorize('--keep-refs', 'yellow')}             Keep references section
+  ${colorize('--max-pages', 'yellow')} <n>         Maximum pages to extract
+  ${colorize('--extract-tables', 'yellow')}        Attempt to extract table data
+  ${colorize('-q, --quiet', 'yellow')}             Suppress progress output
+  ${colorize('--no-color', 'yellow')}              Disable colored output
+  ${colorize('-v, --version', 'yellow')}           Show version number
+  ${colorize('-h, --help', 'yellow')}              Show this help message
 
-Examples:
-  node pdf_extractor.js paper.pdf
-  node pdf_extractor.js paper.pdf --output result.json
-  node pdf_extractor.js --dir ./papers --recursive --output all_results.json
-  node pdf_extractor.js paper.pdf --text-only
+${bold('EXAMPLES')}
+  ${colorize('# Extract and process a single PDF', 'dim')}
+  ${colorize('rct-pdf', 'green')} paper.pdf
+
+  ${colorize('# Save results to JSON', 'dim')}
+  ${colorize('rct-pdf', 'green')} paper.pdf --output result.json
+
+  ${colorize('# Process all PDFs in a directory', 'dim')}
+  ${colorize('rct-pdf', 'green')} --dir ./papers --recursive --output all_results.json
+
+  ${colorize('# Extract text only (no RCT processing)', 'dim')}
+  ${colorize('rct-pdf', 'green')} paper.pdf --text-only
+
+${bold('NOTES')}
+  Requires ${colorize('pdf-parse', 'yellow')} package: ${colorize('npm install pdf-parse', 'dim')}
+
+${bold('MORE INFO')}
+  Documentation: ${colorize('https://github.com/rctextractor/rctextractor', 'cyan')}
 `);
         process.exit(0);
     }

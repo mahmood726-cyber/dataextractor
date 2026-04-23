@@ -58,10 +58,30 @@ const AIStrategies = {
             // Hazard Ratio - multiple formats (added , and ; separators)
             // IMPROVED: Added pattern for "hazard ratio, 0.74; 95% confidence interval [CI], 0.65 to 0.85"
             HR: [
-                /(?:HR|hazard\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
-                /(?:hazard\s*ratio)[,;:\s]*(\d+\.?\d*)[;,]\s*95%?\s*confidence\s*interval\s*\[?CI\]?[,:\s]*(\d+\.?\d*)\s*(?:to|-|–)\s*(\d+\.?\d*)/gi,
+                // v5.5.0: REAL-WORLD PATTERNS from NEJM/Lancet/JAMA publications
+                // Pattern: "hazard ratio in the X group, VALUE; 95% CI, A to B"
+                /hazard\s*ratio\s+in\s+the\s+[\w\-]+\s+group[,;]\s*(\d+[·.]?\d*)\s*[;,]\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*(?:to|[-–])\s*(\d+[·.]?\d*)/gi,
+                // Pattern: "hazard ratio with X, VALUE; 95% CI, A to B" (supports multi-word treatments)
+                /hazard\s*ratio\s+with\s+[\w\-]+(?:\s+[\w\-]+)?[,;]\s*(\d+[·.]?\d*)\s*[;,]\s*\d+[·.]?\d*%?\s*(?:confidence\s+interval\s+\[?CI\]?|CI)[,:\s]*(\d+[·.]?\d*)\s*(?:to|[-–])\s*(\d+[·.]?\d*)/gi,
+                // Pattern: "hazard ratio for X in the Y group, as compared with Z, was VALUE"
+                /hazard\s*ratio\s+for\s+[\w\-]+(?:\s+in\s+the\s+[\w\-]+\s+group)?(?:[^,]*,\s*as\s+compared\s+with[^,]*,)?\s*was\s*(\d+[·.]?\d*)\s*\(\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*(?:to|[-–])\s*(\d+[·.]?\d*)/gi,
+                // Pattern: JAMA bracket format "hazard ratio, VALUE [95% CI, A-B]"
+                /hazard\s*ratio[,;:\s]*(\d+[·.]?\d*)\s*\[\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*[-–]\s*(\d+[·.]?\d*)\]/gi,
+                // Pattern: Lancet format with middle dots "hazard ratio VALUE, 95% CI A–B"
+                /hazard\s*ratio\s+(\d+[·.]?\d*)[,;]\s*\d+[·.]?\d*%?\s*CI\s*(\d+[·.]?\d*)\s*[-–]\s*(\d+[·.]?\d*)/gi,
+                // Pattern: "hazard ratio for the X dose vs. Y, VALUE; 95% CI"
+                /hazard\s*ratio\s+for\s+(?:the\s+)?[\w\-]+(?:\s+dose)?\s+vs\.?\s+\w+[,;]\s*(\d+[·.]?\d*)\s*[;,]\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*(?:to|[-–])\s*(\d+[·.]?\d*)/gi,
+                // Pattern: "hazard ratios...were VALUE (95% CI, A to B)"
+                /hazard\s*ratios?\s+(?:for\s+)?[^0-9]+?(?:were|was)\s+(\d+[·.]?\d*)\s*\(\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*(?:to|[-–])\s*(\d+[·.]?\d*)\)/gi,
+                // Pattern: "Hazard ratio for [any text incl. dosages] was VALUE (95% CI, A-B)" - generic
+                /hazard\s*ratio\s+for\s+.+?\s+was\s+(\d+[·.]?\d*)\s*\(\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*[-–]\s*(\d+[·.]?\d*)/gi,
+                // Pattern: "hazard ratio was VALUE (95% CI, A-B)" - simple format
+                /hazard\s*ratio\s+was\s+(\d+[·.]?\d*)\s*\(\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*[-–]\s*(\d+[·.]?\d*)/gi,
+                // Original patterns - updated to support any CI percentage (97.5%, 99.5%, etc.)
+                /(?:HR|hazard\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?\d+\.?\d*%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
+                /(?:hazard\s*ratio)[,;:\s]*(\d+\.?\d*)[;,]\s*\d+\.?\d*%?\s*confidence\s*interval\s*\[?CI\]?[,:\s]*(\d+\.?\d*)\s*(?:to|-|–)\s*(\d+\.?\d*)/gi,
                 // v4.9.2: Oncology format - "hazard ratio for [outcome], X.XX; 95% CI X.XX to X.XX"
-                /(?:hazard\s*ratio)\s+(?:for\s+)?(?:death|progression|disease|survival)[^,]*,\s*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
+                /(?:hazard\s*ratio)\s+(?:for\s+)?(?:death|progression|disease|survival)[^,]*,\s*(\d+\.?\d*)\s*[;,]?\s*(?:\(?\d+\.?\d*%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
                 /(?:HR|hazard\s*ratio)[,;:\s=]+(\d+\.?\d*)/gi,
                 /(?:hazard\s+ratio\s+(?:of|was|=))\s*(\d+\.?\d*)/gi
             ],
@@ -80,6 +100,14 @@ const AIStrategies = {
             ],
             // Odds Ratio (includes adjusted OR, common OR)
             OR: [
+                // v5.5.0: Real-world OR patterns
+                // Pattern: "Odds ratio for X was VALUE (95% CI, A-B)" - simple format
+                /odds\s*ratio\s+for\s+\w+\s+was\s+(\d+[·.]?\d*)\s*\(\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*[-–]\s*(\d+[·.]?\d*)/gi,
+                // Pattern: "odds ratio with X, VALUE; 95% CI, A to B"
+                /odds\s*ratio\s+with\s+[\w\-]+(?:\s+therapy|\s+treatment)?[,;]\s*(\d+[·.]?\d*)\s*[;,]\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*(?:to|[-–])\s*(\d+[·.]?\d*)/gi,
+                // Pattern: "adjusted odds ratio, VALUE; 95% CI, A to B"
+                /adjusted\s*odds\s*ratio[,;:\s]*(\d+[·.]?\d*)\s*[;,]\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*(?:to|[-–])\s*(\d+[·.]?\d*)/gi,
+                // Original patterns
                 /(?:OR|odds\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
                 /(?:adjusted\s+)?(?:odds\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
                 /(?:common\s+)?(?:odds\s*ratio)[,;:\s]+(?:was|of|=)?\s*(\d+\.?\d*)\s*\(?95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
@@ -88,6 +116,16 @@ const AIStrategies = {
             ],
             // Risk Difference / Absolute Risk Reduction
             RD: [
+                // v5.5.0: Real-world RD patterns with unicode minus and middle dots
+                // Pattern: "adjusted risk difference −8·1% [95% CI −13·1 to −3·2]"
+                /adjusted\s*risk\s*difference\s*([−\-]?\d+[·.]?\d*)%?\s*\[?\d+[·.]?\d*%?\s*CI[,:\s]*([−\-]?\d+[·.]?\d*)\s*(?:to|[-–])\s*([−\-]?\d+[·.]?\d*)\]?/gi,
+                // Pattern: "risk difference VALUE% (95% CI A to B)"
+                /risk\s*difference\s*([−\-]?\d+[·.]?\d*)%?\s*\(\d+[·.]?\d*%?\s*CI[,:\s]*([−\-]?\d+[·.]?\d*)\s*(?:to|[-–])\s*([−\-]?\d+[·.]?\d*)\)/gi,
+                // Pattern: "difference, VALUE percentage points; 95% CI" (response rate differences)
+                /difference[,;:\s]+([−\-]?\d+[·.]?\d*)\s*percentage\s*points[;,]\s*\d+[·.]?\d*%?\s*CI[,:\s]*([−\-]?\d+[·.]?\d*)\s*(?:to|[-–])\s*([−\-]?\d+[·.]?\d*)/gi,
+                // Pattern: "Difference vs X VALUE percentage points (95% CI, A-B)" - comparative difference
+                /difference\s+vs\.?\s+\w+\s+([−\-]?\d+[·.]?\d*)\s*percentage\s*points\s*\(\s*\d+[·.]?\d*%?\s*CI[,:\s]*([−\-]?\d+[·.]?\d*)\s*[-–]\s*([−\-]?\d+[·.]?\d*)/gi,
+                // Original patterns
                 /(?:risk\s*difference|RD|ARR|absolute\s*risk\s*reduction)[,;:\s=]*(-?\d+\.?\d*)\s*%?\s*(?:percentage\s*points)?/gi,
                 /(?:risk\s*difference)(?:\s+\w+)*\s+(?:was|of|=)\s*(-?\d+\.?\d*)\s*%?/gi,
                 /(?:absolute\s*difference)[,;:\s=]*(-?\d+\.?\d*)\s*%?/gi,
@@ -100,6 +138,17 @@ const AIStrategies = {
             ],
             // Mean Difference (for continuous outcomes)
             MD: [
+                // v5.5.0: Real-world MD patterns with unicode minus support
+                // Pattern: "difference, −0.45; 95% CI, −0.67 to −0.23" (NEJM format with unicode minus)
+                /difference[,;:\s]+([−\-]?\d+[·.]?\d*)\s*[;,]\s*\d+[·.]?\d*%?\s*CI[,:\s]*([−\-]?\d+[·.]?\d*)\s*(?:to|[-–])\s*([−\-]?\d+[·.]?\d*)/gi,
+                // Pattern: "estimated treatment difference vs. placebo, VALUE percentage points; 95% CI"
+                /(?:estimated\s+)?treatment\s+difference[^,]*,\s*([−\-]?\d+[·.]?\d*)\s*(?:percentage\s*points)?[;,]\s*\d+[·.]?\d*%?\s*CI[,:\s]*([−\-]?\d+[·.]?\d*)\s*(?:to|[-–])\s*([−\-]?\d+[·.]?\d*)/gi,
+                // Pattern: "mean change...difference, VALUE"
+                /mean\s+change[^)]+\(difference[,;:\s]+([−\-]?\d+[·.]?\d*)\s*[;,]\s*\d+[·.]?\d*%?\s*CI[,:\s]*([−\-]?\d+[·.]?\d*)\s*(?:to|[-–])\s*([−\-]?\d+[·.]?\d*)/gi,
+                // Pattern: "Difference VALUE mL (95% CI, A-B)" - FVC/lung function differences
+                /difference\s+([−\-]?\d+[·.]?\d*)\s*(?:mL|ml|L|liters?)\s*\(\s*\d+[·.]?\d*%?\s*CI[,:\s]*([−\-]?\d+[·.]?\d*)\s*[-–]\s*([−\-]?\d+[·.]?\d*)/gi,
+                // Pattern: "Difference VALUE mL/year (95% CI, A-B)" - annual rate differences
+                /difference\s+([−\-]?\d+[·.]?\d*)\s*(?:mL\/year|ml\/year)\s*\(\s*\d+[·.]?\d*%?\s*CI[,:\s]*([−\-]?\d+[·.]?\d*)\s*[-–]\s*([−\-]?\d+[·.]?\d*)/gi,
                 // v4.9.4: INPULSIS format "(difference X.X ml/year; 95% CI Y.Y-Z.Z)"
                 /\(?difference\s+(-?\d+\.?\d*)\s*(?:ml\/year|ml\/min|L\/min|ml|L|kg|g|mmHg|mm\s*Hg|hours?|days?|weeks?|months?|years?|%|points?|letters?)?[;,]\s*95%?\s*CI\s*(-?\d+\.?\d*)\s*[-–to]+\s*(-?\d+\.?\d*)/gi,
                 // v4.9.2: Pattern for "(difference -9.5 mm Hg; 95% CI -10.6 to -8.4)"
@@ -4078,6 +4127,12 @@ const RCTExtractor = {
 
     extract(text) {
         const startTime = Date.now();
+
+        // v5.5.0: Normalize unicode characters for consistent parsing
+        text = text.replace(/−/g, '-');  // Unicode minus to ASCII minus
+        text = text.replace(/·/g, '.');  // Middle dot to decimal point
+        text = text.replace(/–/g, '-');  // En-dash to ASCII hyphen
+        text = text.replace(/—/g, '-');  // Em-dash to ASCII hyphen
 
         // Run base v4.7 extraction
         const baseResult = V47Extractor.extract(text);
