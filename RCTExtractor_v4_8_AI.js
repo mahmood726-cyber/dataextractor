@@ -4123,7 +4123,7 @@ const BiasDetector = {
 // ============================================================
 
 const RCTExtractor = {
-    version: '4.9.5-AI',  // Expanded validation: 65 trials across 12 domains, 100% accuracy, 18+ sample size formats
+    version: '5.1.0-AI-NMA-i18n',  // v5.1.0: i18n + NMA support; node_*.js / validation_v49.js / comprehensive_node_test.js expected this string but root lib was stuck at 4.9.5-AI until 2026-04-25 fix
 
     extract(text) {
         const startTime = Date.now();
