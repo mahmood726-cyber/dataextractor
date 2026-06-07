@@ -93,8 +93,27 @@ const {
     extractTables
 } = require('./pdf_extractor.js');
 
+// Optional modules (qc/viz/lib) provide quality-control, visualization, and
+// audit/batch/cache helpers. They are NOT required for core extraction. If one
+// is absent in this checkout, degrade gracefully so require('rctextractor')
+// still exposes the working extractor instead of throwing MODULE_NOT_FOUND at
+// load. Only the requested module being missing is swallowed — a real error
+// inside a present module still propagates.
+const _missingOptional = [];
+function safeRequire(name) {
+    try {
+        return require(name);
+    } catch (err) {
+        if (err && err.code === 'MODULE_NOT_FOUND' && String(err.message).includes(name)) {
+            _missingOptional.push(name);
+            return {};
+        }
+        throw err;
+    }
+}
+
 // Quality Control module
-const QC = require('./qc');
+const QC = safeRequire('./qc');
 const {
     QualityChecker,
     QCReportGenerator,
@@ -106,10 +125,16 @@ const {
 } = QC;
 
 // Visualization module
-const viz = require('./viz');
+const viz = safeRequire('./viz');
 
 // Library modules (audit, batch processing, caching, etc.)
-const lib = require('./lib');
+const lib = safeRequire('./lib');
+if (_missingOptional.length) {
+    console.warn(
+        '[rctextractor] optional modules unavailable (' + _missingOptional.join(', ') +
+        '); core extraction works, but QC/visualization/audit features are disabled.'
+    );
+}
 const {
     // Audit logging
     AuditLogger,
