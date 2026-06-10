@@ -3086,20 +3086,44 @@ summary(res_mod)
 
         // Age patterns (handles years and months for pediatric)
         // v4.9.3: Priority order - most specific patterns first
+        // BUGFIX (GLP-1 CVOT pass, 2026-06-10): the old "general" fallback
+        //   /(?:mean\s+)?age[^\d]*(\d+)(?:±|years?)/
+        // matched the ELIGIBILITY FLOOR in "patients aged 50 years or older"
+        // (the "d" of "aged" is consumed by [^\d]) and reported 50 as the mean
+        // age. This mirrors the HARMONY/SUSTAIN-6/SOUL "minimum age taken as
+        // age range" bug already fixed in LocalAI.js (MedicalNER.extractAge).
+        // The fallback now (a) demands a true mean/median/average qualifier OR
+        // an explicit "X +/- SD years" form, and (b) the value must NOT be an
+        // eligibility floor ("X years or older", ">=X", "X and older/above").
+        // Tolerates a European decimal comma in the value (parsed below).
         const ageMatch =
                          // v4.9.3: "Median age was X years" (prioritize before general pattern)
-                         text.match(/(?:median|mean)\s+age\s+(?:was\s+)?(\d+(?:\.\d+)?)\s*years?/i) ||
-                         // General: "Mean age was 66.3 years" or "age 58 years"
-                         text.match(/(?:mean\s+)?age[^\d]*(\d+(?:\.\d+)?)\s*(?:±|\+\/?-|years?)/i) ||
-                         // SD format: "66.3 ± 11.0 years"
-                         text.match(/(\d+(?:\.\d+)?)\s*(?:±|\+\/?-)\s*(\d+(?:\.\d+)?)\s*years?/i) ||
-                         // v4.9.2: Pediatric - "Median age was X.X months"
-                         text.match(/(?:median\s+)?age\s+(?:was\s+)?(\d+(?:\.\d+)?)\s*months?/i);
-        if (ageMatch) {
-            population.ageMean = parseFloat(ageMatch[1]);
+                         text.match(/(?:median|mean|average)\s+age\s+(?:was\s+|of\s+|,\s*)?(\d+(?:[.,]\d+)?)\s*(?:±|\+\/?-|\(|years?|y\b|yrs?)/i) ||
+                         // SD format: "66.3 ± 11.0 years" (a bare value with an SD is a summary stat, not a floor)
+                         text.match(/(\d+(?:[.,]\d+)?)\s*(?:±|\+\/?-)\s*(\d+(?:[.,]\d+)?)\s*years?/i) ||
+                         // v4.9.2: Pediatric - "Median/mean age was X.X months"
+                         text.match(/(?:median|mean|average)\s+age\s+(?:was\s+)?(\d+(?:[.,]\d+)?)\s*months?/i);
+        // Reject if the matched number is actually an eligibility minimum.
+        const ageIsEligibilityFloor = (m) => {
+            if (!m) return false;
+            const idx = (m.index || 0);
+            const around = text.slice(Math.max(0, idx - 12), Math.min(text.length, idx + m[0].length + 18)).toLowerCase();
+            return /(?:>=|≥|or\s+(?:older|above)|and\s+(?:older|above)|at\s+least|or\s+more)/.test(around);
+        };
+        if (ageMatch && !ageIsEligibilityFloor(ageMatch)) {
+            population.ageMean = parseFloat(String(ageMatch[1]).replace(',', '.'));
             if (ageMatch[2]) {
-                population.ageSD = parseFloat(ageMatch[2]);
+                population.ageSD = parseFloat(String(ageMatch[2]).replace(',', '.'));
             }
+        }
+
+        // Race / ethnicity breakdown. Reuses the audited MedicalNER.extractEthnicity
+        // helper from LocalAI.js (added in the GLP-1 CVOT fix) so the v4_8 engine
+        // and the LocalAI pattern layer agree. Returns an object like
+        // { white: 84, asian: 8, black: 4 } or null ("not reported") — the field
+        // is NEVER populated with a substituted nearby number.
+        if (typeof MedicalNER !== 'undefined' && typeof MedicalNER.extractEthnicity === 'function') {
+            population.ethnicity = MedicalNER.extractEthnicity(text);
         }
 
         return population;

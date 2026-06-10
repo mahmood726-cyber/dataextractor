@@ -997,12 +997,58 @@ const RCTExtractor = {
             if (controlMatch) result.control.n = parseInt(controlMatch[1]);
         }
 
-        // Age extraction
-        const agePattern = /(?:mean|median)?\s*age[:\s]*(\d+\.?\d*)\s*(?:±|\+\/-|years)/gi;
-        const ageMatch = agePattern.exec(text);
-        if (ageMatch) {
-            result.baseline.age = { mean: parseFloat(ageMatch[1]) };
+        // Age extraction.
+        // BUGFIX (GLP-1 CVOT pass, 2026-06-10): the old pattern
+        //   /(?:mean|median)?\s*age[:\s]*(\d+\.?\d*)\s*(?:±|\+\/-|years)/
+        // made "mean|median" OPTIONAL and required the number to sit right
+        // after "age", so it BOTH missed the true summary "mean age was 64.6
+        // years" (the " was " broke the [:\s]* gap) AND risked capturing an
+        // eligibility floor. We now require an explicit mean/median/average
+        // qualifier (tolerating "was/of/," and a European decimal comma) and
+        // reject an eligibility floor ("X years or older"). Mirrors
+        // LocalAI.js MedicalNER.extractAge. A reported true range is captured
+        // separately. Floor-only text yields no age (not a substituted min).
+        const meanAgeRe = /(?:mean|median|average)\s+age\s+(?:was\s+|of\s+|,\s*)?(\d+(?:[.,]\d+)?)\s*(?:±|\+\/?-|\(|years?|y\b|yrs?)/i;
+        const meanAgeMatch = meanAgeRe.exec(text);
+        const isFloor = (m) => {
+            if (!m) return false;
+            const around = text.slice(Math.max(0, m.index - 12), m.index + m[0].length + 18).toLowerCase();
+            return /(?:>=|≥|or\s+(?:older|above)|and\s+(?:older|above)|at\s+least|or\s+more)/.test(around);
+        };
+        if (meanAgeMatch && !isFloor(meanAgeMatch)) {
+            result.baseline.age = { mean: parseFloat(String(meanAgeMatch[1]).replace(',', '.')) };
+        } else {
+            // True two-ended age range, e.g. "ages ranged from 45 to 80 years".
+            const rangeRe = /ages?\s*(?:ranged?\s*)?(?:from\s*)?(\d+(?:[.,]\d+)?)\s*(?:to|[-–—])\s*(\d+(?:[.,]\d+)?)\s*(?:years?|y\b|yrs?)/i;
+            const rangeMatch = rangeRe.exec(text);
+            if (rangeMatch) {
+                let lo = parseFloat(String(rangeMatch[1]).replace(',', '.'));
+                let hi = parseFloat(String(rangeMatch[2]).replace(',', '.'));
+                if (lo > hi) { const t = lo; lo = hi; hi = t; }
+                result.baseline.age = { range: [lo, hi] };
+            }
         }
+
+        // Race / ethnicity breakdown (GLP-1 CVOT pass). Same logic as
+        // LocalAI.js MedicalNER.extractEthnicity (this file is a standalone
+        // offline page and cannot require() the module, so the audited logic
+        // is mirrored inline). Returns categories or null ("not reported") —
+        // never a substituted nearby number. A "Non-Hispanic" prefix is not
+        // read as Hispanic.
+        result.baseline.ethnicity = (() => {
+            const ethRe = /(?<!non[- ])\b(white|black|african[- ]?american|asian|hispanic|latino|latina|caucasian|native\s+american|pacific\s+islander|other\s+race)\b[^.;%\d]{0,40}?(\d+(?:[.,]\d+)?)\s*%/gi;
+            const out = {};
+            let m;
+            while ((m = ethRe.exec(text)) !== null) {
+                const key = m[1].toLowerCase()
+                    .replace(/african[- ]?american/, 'black')
+                    .replace(/caucasian/, 'white')
+                    .replace(/\s+/g, '_');
+                const pct = parseFloat(String(m[2]).replace(',', '.'));
+                if (isFinite(pct) && out[key] === undefined) out[key] = pct;
+            }
+            return Object.keys(out).length ? out : null;
+        })();
 
         // Registration/NCT extraction
         const nctPatterns = [
@@ -1104,35 +1150,45 @@ const RCTExtractor = {
         };
 
         const patterns = {
+            // BUGFIX (GLP-1 CVOT pass, 2026-06-10): HR/RR/OR are RATIO measures
+            // and are ALWAYS > 0. The previous value capture groups allowed a
+            // leading minus (-?\d+\.?\d*), so a mis-signed "hazard ratio -0.74"
+            // was captured as value=-0.74 (HARMONY "HR negative?"). The value
+            // and CI-bound groups below reject a leading minus and additionally
+            // accept a European decimal comma (\d+(?:[.,]\d+)?) so "0,78" parses.
+            // A negative-signed token simply fails to match -> the impossible
+            // ratio is dropped rather than recorded. Mirrors LocalAI.js
+            // MedicalNER.parseHazardRatio / parseCI. (Non-ratio measures MD/SMD/
+            // RD keep their signed groups because those CAN legitimately be < 0.)
             HR: [
                 // Flexible HR pattern for NEJM format: handles "hazard ratio in the X group, 0.79; 95% CI..."
-                /(?:HR|hazard\s*ratio)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)/gi,
+                /(?:HR|hazard\s*ratio)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(\d+(?:[.,]\d+)?)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(\d+(?:[.,]\d+)?)\s*(?:[-–]|\s+to\s+)\s*(\d+(?:[.,]\d+)?)/gi,
                 // NEW: Square bracket CI format: "HR 0.79 [0.65-0.95]" or "HR 0.79 [95% CI 0.65-0.95]"
-                /(?:HR|hazard\s*ratio)[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)\]/gi,
+                /(?:HR|hazard\s*ratio)[,;:\s=]*(\d+(?:[.,]\d+)?)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(\d+(?:[.,]\d+)?)\s*(?:[-–]|\s+to\s+)\s*(\d+(?:[.,]\d+)?)\]/gi,
                 // Simple HR value: "HR 0.80" or "hazard ratio, 0.79"
-                /(?:HR|hazard\s*ratio)[,;:\s=]+(-?\d+\.?\d*)/gi,
+                /(?:HR|hazard\s*ratio)[,;:\s=]+(\d+(?:[.,]\d+)?)/gi,
                 // "hazard ratio of/was/= X"
-                /(?:hazard\s+ratio\s+(?:of|was|=))\s*(-?\d+\.?\d*)/gi
+                /(?:hazard\s+ratio\s+(?:of|was|=))\s*(\d+(?:[.,]\d+)?)/gi
             ],
             RR: [
                 // Flexible RR pattern: handles "relative risk with dabigatran" or "in the X group"
-                /(?:RR|relative\s*risk)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)/gi,
+                /(?:RR|relative\s*risk)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(\d+(?:[.,]\d+)?)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(\d+(?:[.,]\d+)?)\s*(?:[-–]|\s+to\s+)\s*(\d+(?:[.,]\d+)?)/gi,
                 // NEW: Square bracket CI format: "RR 0.79 [0.65-0.95]"
-                /(?:RR|relative\s*risk)[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)\]/gi,
-                /(?:RR|relative\s*risk)\s+(?:was|of|=)\s*(-?\d+\.?\d*)/gi,
-                /(?:relative\s*risk)[,;:\s=]+(-?\d+\.?\d*)/gi,
+                /(?:RR|relative\s*risk)[,;:\s=]*(\d+(?:[.,]\d+)?)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(\d+(?:[.,]\d+)?)\s*(?:[-–]|\s+to\s+)\s*(\d+(?:[.,]\d+)?)\]/gi,
+                /(?:RR|relative\s*risk)\s+(?:was|of|=)\s*(\d+(?:[.,]\d+)?)/gi,
+                /(?:relative\s*risk)[,;:\s=]+(\d+(?:[.,]\d+)?)/gi,
                 // NEW: "risk ratio X.XX" separate from "relative risk"
-                /risk\s+ratio[,;:\s=]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)?[,;:\s]*)?(-?\d+\.?\d*)?\s*(?:[-–]|\s+to\s+)?\s*(-?\d+\.?\d*)?/gi,
+                /risk\s+ratio[,;:\s=]+(\d+(?:[.,]\d+)?)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)?[,;:\s]*)?(\d+(?:[.,]\d+)?)?\s*(?:[-–]|\s+to\s+)?\s*(\d+(?:[.,]\d+)?)?/gi,
                 // NEW: Risk ratio with square brackets
-                /risk\s+ratio[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)\]/gi
+                /risk\s+ratio[,;:\s=]*(\d+(?:[.,]\d+)?)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(\d+(?:[.,]\d+)?)\s*(?:[-–]|\s+to\s+)\s*(\d+(?:[.,]\d+)?)\]/gi
             ],
             OR: [
                 // Flexible OR pattern: handles "odds ratio with X" or "in the X group"
-                /(?:OR|odds\s*ratio)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)/gi,
+                /(?:OR|odds\s*ratio)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(\d+(?:[.,]\d+)?)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(\d+(?:[.,]\d+)?)\s*(?:[-–]|\s+to\s+)\s*(\d+(?:[.,]\d+)?)/gi,
                 // NEW: Square bracket CI format: "OR 1.25 [0.95-1.65]"
-                /(?:OR|odds\s*ratio)[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)\]/gi,
-                /(?:odds\s*ratio)(?:\s+\w+)*\s+(?:was|of|=)\s*(-?\d+\.?\d*)/gi,
-                /(?:odds\s*ratio|OR)[,;:\s=]+(-?\d+\.?\d*)/gi
+                /(?:OR|odds\s*ratio)[,;:\s=]*(\d+(?:[.,]\d+)?)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(\d+(?:[.,]\d+)?)\s*(?:[-–]|\s+to\s+)\s*(\d+(?:[.,]\d+)?)\]/gi,
+                /(?:odds\s*ratio)(?:\s+\w+)*\s+(?:was|of|=)\s*(\d+(?:[.,]\d+)?)/gi,
+                /(?:odds\s*ratio|OR)[,;:\s=]+(\d+(?:[.,]\d+)?)/gi
             ],
             MD: [
                 // Enhanced MD patterns for continuous outcomes (v5.1.0)
@@ -1234,21 +1290,35 @@ const RCTExtractor = {
             ]
         };
 
+        // Parse a numeric token that may use a period OR a European decimal
+        // comma ("0,78" -> 0.78). (GLP-1 CVOT fix, mirrors LocalAI _num.)
+        const num = (tok) => (tok === undefined || tok === null) ? NaN : parseFloat(String(tok).replace(',', '.'));
+        // Ratio measures are strictly positive; reject any non-positive value
+        // that slipped through (defence-in-depth alongside the regex change).
+        const ratioTypes = new Set(['HR', 'RR', 'OR', 'RateRatio']);
+
         for (const [type, patternList] of Object.entries(patterns)) {
             for (const pattern of patternList) {
                 pattern.lastIndex = 0;
                 let match;
                 while ((match = pattern.exec(text)) !== null) {
+                    const value = num(match[1]);
+                    // Drop impossible ratio measures (<= 0) instead of recording them.
+                    if (ratioTypes.has(type) && !(value > 0)) continue;
                     const result = {
                         type,
-                        value: parseFloat(match[1]),
+                        value,
                         raw: match[0],
                         position: match.index
                     };
 
                     if (match[2] && match[3]) {
-                        result.ciLo = parseFloat(match[2]);
-                        result.ciHi = parseFloat(match[3]);
+                        let lo = num(match[2]);
+                        let hi = num(match[3]);
+                        // Return an ORDERED interval [lower, upper].
+                        if (isFinite(lo) && isFinite(hi) && lo > hi) { const t = lo; lo = hi; hi = t; }
+                        result.ciLo = lo;
+                        result.ciHi = hi;
                     }
 
                     const start = Math.max(0, match.index - 50);
@@ -1276,6 +1346,41 @@ const RCTExtractor = {
         }
 
         return measures;
+    },
+
+    // Extract an event count for a SPECIFIC, named measure as "n of N" / "n/N".
+    // (GLP-1 CVOT pass, 2026-06-10; mirrors LocalAI.js MedicalNER.extractEventCount.)
+    // Returns a value ONLY when the measure label is matched and is NOT negated
+    // / preceded by "not"/"non"/"never"/"no" or a "not reported" phrasing.
+    // Otherwise returns null so a "not reported" measure stays null instead of
+    // picking up a nearby unrelated number (e.g. SELECT's 223 cardiovascular
+    // deaths must not be mis-mapped to nonfatal MI, which the paper did not
+    // report as a standalone count). isRandomizationRatio() lets callers keep
+    // a "1:1" allocation ratio out of clinical-data fields.
+    extractEventCount(text, measureLabel) {
+        if (!text || !measureLabel) return null;
+        const labelRe = new RegExp(measureLabel, 'i');
+        const labelMatch = labelRe.exec(text);
+        if (!labelMatch) return null;            // measure not reported
+        const pre = text.slice(Math.max(0, labelMatch.index - 30), labelMatch.index).toLowerCase();
+        if (/\b(not|non|never|no)\b[\s\w]*$/.test(pre) || /not\s+reported|were\s+not/.test(pre)) {
+            return null;                         // negated -> stays null
+        }
+        const after = text.slice(labelMatch.index, labelMatch.index + 120);
+        const cm = /(\d[\d,]*)\s*(?:of|\/)\s*(\d[\d,]*)/.exec(after);
+        if (!cm) return null;
+        const n = parseInt(cm[1].replace(/,/g, ''), 10);
+        const N = parseInt(cm[2].replace(/,/g, ''), 10);
+        if (!isFinite(n) || !isFinite(N) || n > N) return null;
+        return { events: n, total: N };
+    },
+
+    // True when the text describes an allocation/randomization ratio ("1:1").
+    // (GLP-1 CVOT pass; mirrors LocalAI.js MedicalNER.isRandomizationRatio.)
+    isRandomizationRatio(text) {
+        if (!text) return false;
+        return /\b(?:randomi[sz]ed?|allocat(?:ed|ion)|assigned?)\s*(?:in\s*a\s*)?\d+\s*:\s*\d+\s*(?:ratio|fashion)?/i.test(text) ||
+               /\b\d+\s*:\s*\d+\s*ratio\b/i.test(text);
     },
 
     scoreQuality(result, text) {

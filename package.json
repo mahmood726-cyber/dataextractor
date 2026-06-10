@@ -58,6 +58,8 @@
   "scripts": {
     "test": "node run_tests.js",
     "test:cvot": "node tests/glp1_cvot_extraction.test.js",
+    "test:cvot:v48": "node tests/glp1_cvot_v48.test.js",
+    "test:cvot:webapp": "node tests/glp1_cvot_webapp.test.js",
     "test:watch": "node --watch run_tests.js",
     "test:server": "node tests/server.test.js",
     "test:e2e": "node tests/e2e/run_all.js",
