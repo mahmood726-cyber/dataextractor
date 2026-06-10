@@ -56,6 +56,12 @@ function ok(name, cond) {
     logger.info(lib.AUDIT_EVENT_TYPES.EXTRACTION, 'ok');
     ok('AuditLogger records', logger.entries().length === 1);
 
+    // --- GLP-1 CVOT extraction regression suite ----------------------------
+    // (HARMONY / SELECT / SUSTAIN-6 / SOUL) — tests/glp1_cvot_extraction.test.js
+    const cvot = require('./tests/glp1_cvot_extraction.test.js').run();
+    pass += cvot.pass;
+    fail += cvot.fail;
+
     console.log('\n' + pass + ' passed, ' + fail + ' failed');
     process.exit(fail === 0 ? 0 : 1);
 })().catch((e) => { console.error('FATAL', e && e.stack ? e.stack : e); process.exit(1); });

@@ -1536,27 +1536,76 @@ const MedicalNER = {
     patterns: {
         DOSE: /(\d+(?:\.\d+)?)\s*(mg|mcg|µg|g|iu|units?|ml)\b/gi,
         PERCENTAGE: /(\d+(?:\.\d+)?)\s*%/g,
-        // Hazard Ratio
-        HAZARD_RATIO: /(?:HR|hazard\s*ratio)[:\s]*(\d+\.\d+)/gi,
-        // Relative Risk
-        RELATIVE_RISK: /(?:RR|relative\s*risk)[:\s]*(\d+\.\d+)/gi,
-        // Odds Ratio
-        ODDS_RATIO: /(?:OR|odds\s*ratio)[:\s]*(\d+\.\d+)/gi,
+        // Hazard Ratio. A ratio measure is ALWAYS a positive number, so the
+        // capture group must NOT allow a leading minus/unicode-minus. This
+        // prevents mis-signed HR like "-0.74" from being captured as a valid
+        // hazard ratio (see HARMONY "Unclear what the HR means here (negative?)").
+        HAZARD_RATIO: /(?:HR|hazard\s*ratio)[,;:=\s]*(\d+[.,]\d+)/gi,
+        // Relative Risk (ratio measure: positive only)
+        RELATIVE_RISK: /(?:RR|relative\s*risk)[,;:=\s]*(\d+[.,]\d+)/gi,
+        // Odds Ratio (ratio measure: positive only)
+        ODDS_RATIO: /(?:OR|odds\s*ratio)[,;:=\s]*(\d+[.,]\d+)/gi,
         // Risk Difference / Absolute Risk Reduction
         RISK_DIFFERENCE: /(?:RD|ARR|risk\s*difference|absolute\s*risk\s*reduction)[:\s]*(-?\d+\.\d+)/gi,
         // Number Needed to Treat/Harm
         NNT: /(?:NNT|number\s*needed\s*to\s*treat)[:\s]*(\d+(?:\.\d+)?)/gi,
         NNH: /(?:NNH|number\s*needed\s*to\s*harm)[:\s]*(\d+(?:\.\d+)?)/gi,
-        // Confidence Interval (more flexible)
-        CONFIDENCE_INTERVAL: /(?:95%?\s*CI|CI\s*95%?|confidence\s*interval)[:\s]*[\[(]?(\d+\.\d+)\s*[-–,to]+\s*(\d+\.\d+)[\])]?/gi,
+        // Confidence Interval.
+        // BUGFIX (SELECT): the previous pattern used a separator char-class
+        // `[-–,to]+` and required period decimals `\d+\.\d+`. That:
+        //   (a) failed on European decimal commas ("0,58 to 0,95"),
+        //   (b) failed on integer bounds ("CI 1 to 5"), and
+        //   (c) let a decimal comma act as the lower/upper SEPARATOR, so
+        //       "0.58-0.95" risked being read as "0.58" and "-0.95" rather
+        //       than the interval [0.58, 0.95].
+        // The number group now accepts an optional decimal that may use a
+        // period OR a comma (`\d+(?:[.,]\d+)?`). The separator between the two
+        // bounds is restricted to hyphen / en-dash / em-dash / "to" and is
+        // matched with surrounding whitespace tolerance. Because the separator
+        // class deliberately excludes a bare comma, a European decimal comma
+        // inside a bound can never be mistaken for the interval separator.
+        // Parsing of the captured groups into numeric [lower, upper] is done by
+        // MedicalNER.parseCI(), which normalises the decimal mark.
+        CONFIDENCE_INTERVAL: /(?:95%?\s*CI|CI\s*95%?|confidence\s*interval)[,:\s]*[\[(]?(\d+(?:[.,]\d+)?)\s*(?:to|[-–—])\s*(\d+(?:[.,]\d+)?)[\])]?/gi,
         // P-value (more patterns)
         P_VALUE: /[Pp]\s*[=<>]\s*0?\.\d+|[Pp]\s*[<>]\s*0?\.\d+/g,
         // Sample size (case insensitive)
         SAMPLE_SIZE: /[Nn]\s*[=:]\s*(\d+(?:,\d+)?)/g,
         TOTAL_PATIENTS: /(\d+(?:,\d+)?)\s*(?:patients?|participants?|subjects?)\s*(?:were\s*)?(?:randomized|enrolled|included)/gi,
-        // Age patterns
-        AGE: /(?:age|aged?|mean\s*age)[:\s]*(\d+(?:\.\d+)?)\s*(?:±|±|years?|y|yrs?)/gi,
-        AGE_RANGE: /age[d\s]*(\d+)\s*(?:to|-|–)\s*(\d+)\s*(?:years?)?/gi,
+        // Age patterns.
+        // BUGFIX (HARMONY/SUSTAIN-6/SOUL "age range" = minimum age): the old AGE
+        // pattern required the number to sit immediately after "age"/"aged",
+        // which matched the eligibility floor ("aged 50 years or older") and
+        // missed the true MEAN age ("mean age was 64.6 years"). The result was
+        // the minimum/eligibility age being reported as the age field. We now:
+        //   - AGE captures a genuine MEAN age, tolerating "mean age was X",
+        //     "mean age X", "X ± SD", "X (SD)" and a few connective words.
+        //   - AGE_MINIMUM separately captures an eligibility FLOOR (>=X / "X or
+        //     older" / "X years and older"). It is tagged distinctly so the
+        //     downstream field logic never reports it as the age range.
+        //   - AGE_RANGE requires an actual TWO-ended range with a year unit.
+        AGE: /(?:mean|median|average)\s*age\s*(?:was|of|,|:|=|\(SD\)|\[SD\])?\s*(?:was\s*)?(\d+(?:[.,]\d+)?)\s*(?:±|±|\(|years?|y\b|yrs?)?/gi,
+        // Minimum / eligibility age — NOT an age range. Examples:
+        //   ">=50 years", "50 years or older", "aged 50 years and older",
+        //   "age >= 18". Captured so callers can keep it OUT of the age field.
+        AGE_MINIMUM: /(?:aged?\s*)?(?:>=|≥|at\s+least\s+)\s*(\d+)\s*(?:years?|y|yrs?)?|(?:aged?\s*)?(\d+)\s*years?\s*(?:or|and)\s*(?:older|above)/gi,
+        // True age range: "45 to 80 years", "45–80 years", "(range 45-80)".
+        AGE_RANGE: /(?:age[d\s]*|ages?\s*(?:ranged?\s*)?(?:from\s*)?|range[,:\s]*)(\d+(?:[.,]\d+)?)\s*(?:to|[-–—])\s*(\d+(?:[.,]\d+)?)\s*(?:years?|y|yrs?)/gi,
+        // Ethnicity / race category percentages.
+        // BUGFIX (all four trials: "Ethnicity — no categories captured"). The
+        // tool previously had NO ethnicity pattern, so the field was always
+        // empty. This captures "<category> ... <pct>%" for the standard race /
+        // ethnicity categories. Group 1 = category, group 2 = percentage.
+        // Callers that find zero matches must report "not reported" (null),
+        // never a substituted nearby number. See MedicalNER.extractEthnicity().
+        // The leading (?<!non[- ]) negative lookbehind stops "Non-Hispanic
+        // White 69.7%" from being captured as Hispanic=69.7; the "white" token
+        // immediately after is the real category for that percentage.
+        ETHNICITY: /(?<!non[- ])\b(white|black|african[- ]?american|asian|hispanic|latino|latina|caucasian|native\s+american|pacific\s+islander|other\s+race)\b[^.;%\d]{0,40}?(\d+(?:[.,]\d+)?)\s*%/gi,
+        // Randomization ratio (e.g. "1:1", "2:1"). Captured EXPLICITLY so that
+        // it is recognised as an allocation ratio and is NEVER mapped into a
+        // clinical data field. BUGFIX (SOUL: tool highlighted "1:1" as data).
+        RANDOMIZATION_RATIO: /\b(?:randomi[sz]ed?|allocat(?:ed|ion)|assigned?)\s*(?:in\s*a\s*)?(\d+)\s*:\s*(\d+)\s*(?:ratio|fashion)?|\b(\d+)\s*:\s*(\d+)\s*ratio\b/gi,
         // Follow-up
         FOLLOWUP: /(?:follow[- ]?up|median\s*follow|mean\s*follow)[:\s]*(\d+(?:\.\d+)?)\s*(days?|weeks?|months?|years?)/gi,
         // Trial acronym
@@ -1687,6 +1736,132 @@ const MedicalNER = {
             'BIOLOGIC': ['dupilumab', 'secukinumab', 'ixekizumab', 'guselkumab', 'risankizumab', 'ustekinumab', 'adalimumab']
         };
         return categories[category] || [];
+    },
+
+    // ----------------------------------------------------------------
+    // Structured-field helpers (added 2026-06-10, GLP-1 CVOT fix pass).
+    // These turn the raw pattern matches above into safe, label-checked
+    // field values. The guiding rule: when a value's label is NOT
+    // unambiguously matched, return null ("not reported") rather than a
+    // substituted nearby number.
+    // ----------------------------------------------------------------
+
+    // Normalise a numeric token that may use a period OR a European decimal
+    // comma ("0,58" -> 0.58). Returns NaN for unparseable input.
+    _num(tok) {
+        if (tok === null || tok === undefined) return NaN;
+        // Only treat a comma as a decimal mark; do NOT strip thousands commas
+        // here because CI bounds are small ratios, not large counts.
+        return parseFloat(String(tok).replace(',', '.'));
+    },
+
+    // Parse a confidence interval from free text into [lower, upper] (ascending).
+    // Returns null when no well-formed interval is present. Robust to:
+    //   "0.58-0.95", "0.58 to 0.95", "0.58–0.95" (en-dash), "0,58 to 0,95"
+    //   (European comma). Never splits "A-B" into "A" and "-B".
+    parseCI(text) {
+        if (!text) return null;
+        const re = this.patterns.CONFIDENCE_INTERVAL;
+        re.lastIndex = 0;
+        const m = re.exec(text);
+        if (!m) return null;
+        const lo = this._num(m[1]);
+        const hi = this._num(m[2]);
+        if (!isFinite(lo) || !isFinite(hi)) return null;
+        return lo <= hi ? [lo, hi] : [hi, lo];
+    },
+
+    // Parse a hazard/risk/odds ratio. A ratio measure is ALWAYS > 0, so a
+    // non-positive or mis-signed value is rejected (returns null).
+    parseHazardRatio(text) {
+        if (!text) return null;
+        const re = this.patterns.HAZARD_RATIO;
+        re.lastIndex = 0;
+        const m = re.exec(text);
+        if (!m) return null;
+        const hr = this._num(m[1]);
+        if (!isFinite(hr) || hr <= 0) return null;  // reject negative / zero
+        return hr;
+    },
+
+    // Extract race/ethnicity category percentages. Returns an object like
+    // { white: 84, asian: 8, black: 4 } or null when nothing is reported
+    // (so the caller can faithfully report "not reported").
+    extractEthnicity(text) {
+        if (!text) return null;
+        const re = this.patterns.ETHNICITY;
+        re.lastIndex = 0;
+        const out = {};
+        let m;
+        while ((m = re.exec(text)) !== null) {
+            const key = m[1].toLowerCase()
+                .replace(/african[- ]?american/, 'black')
+                .replace(/caucasian/, 'white')
+                .replace(/\s+/g, '_');
+            const pct = this._num(m[2]);
+            if (isFinite(pct) && out[key] === undefined) out[key] = pct;
+        }
+        return Object.keys(out).length ? out : null;
+    },
+
+    // Extract the AGE field. Prefers a true MEAN age; falls back to a reported
+    // age RANGE. Crucially it NEVER returns an eligibility-floor / minimum age
+    // (">=50 years") as the age, because that misrepresents the population.
+    // Returns { mean } or { range:[lo,hi] } or null.
+    extractAge(text) {
+        if (!text) return null;
+        const ageRe = this.patterns.AGE;
+        ageRe.lastIndex = 0;
+        const am = ageRe.exec(text);
+        if (am) {
+            const mean = this._num(am[1]);
+            if (isFinite(mean)) return { mean };
+        }
+        const rangeRe = this.patterns.AGE_RANGE;
+        rangeRe.lastIndex = 0;
+        const rm = rangeRe.exec(text);
+        if (rm) {
+            const lo = this._num(rm[1]);
+            const hi = this._num(rm[2]);
+            if (isFinite(lo) && isFinite(hi)) return { range: lo <= hi ? [lo, hi] : [hi, lo] };
+        }
+        return null;  // mean/range not reported -> do NOT fall back to min age
+    },
+
+    // Extract an event count for a SPECIFIC, named measure as "n of N" or
+    // "n/N". Only returns a value when the measure label is matched and is NOT
+    // negated / preceded by a "not"/"non"/"never" or a wrong label. Returns
+    // null otherwise so a "not reported" measure stays null instead of picking
+    // up a nearby unrelated number (e.g. SELECT cardiovascular-death count 223
+    // must not be mis-mapped onto nonfatal MI).
+    extractEventCount(text, measureLabel) {
+        if (!text || !measureLabel) return null;
+        const labelRe = new RegExp(measureLabel, 'i');
+        const labelMatch = labelRe.exec(text);
+        if (!labelMatch) return null;  // measure not reported
+        // Reject if the 30 chars before the label contain a negation / "not
+        // reported" phrasing for THIS measure.
+        const pre = text.slice(Math.max(0, labelMatch.index - 30), labelMatch.index).toLowerCase();
+        if (/\b(not|non|never|no)\b[\s\w]*$/.test(pre) || /not\s+reported|were\s+not/.test(pre)) {
+            return null;
+        }
+        // Look for "n of N" or "n/N" within a short window AFTER the label.
+        const after = text.slice(labelMatch.index, labelMatch.index + 120);
+        const cm = /(\d[\d,]*)\s*(?:of|\/)\s*(\d[\d,]*)/.exec(after);
+        if (!cm) return null;
+        const n = parseInt(cm[1].replace(/,/g, ''), 10);
+        const N = parseInt(cm[2].replace(/,/g, ''), 10);
+        if (!isFinite(n) || !isFinite(N) || n > N) return null;
+        return { events: n, total: N };
+    },
+
+    // True when the text describes an allocation/randomization ratio (e.g.
+    // "1:1"). Callers use this to AVOID mapping "1:1" into a data field.
+    isRandomizationRatio(text) {
+        if (!text) return false;
+        const re = this.patterns.RANDOMIZATION_RATIO;
+        re.lastIndex = 0;
+        return re.test(text);
     }
 };
 
