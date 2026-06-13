@@ -142,9 +142,6 @@ npx rctextract --inputs "paper1.txt,paper2.txt" --output combined.json
 
 # PDF extraction
 npx rct-pdf input.pdf output.json
-
-# Split multi-paper documents
-npx rct-split --files "combined.txt" --output ./split_papers
 ```
 
 ### Web Application
