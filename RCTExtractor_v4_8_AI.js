@@ -78,25 +78,25 @@ const AIStrategies = {
                 // Pattern: "hazard ratio was VALUE (95% CI, A-B)" - simple format
                 /hazard\s*ratio\s+was\s+(\d+[·.]?\d*)\s*\(\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*[-–]\s*(\d+[·.]?\d*)/gi,
                 // Original patterns - updated to support any CI percentage (97.5%, 99.5%, etc.)
-                /(?:HR|hazard\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?\d+\.?\d*%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
+                /(?:HR|hazard\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?\d+\.?\d*%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
                 /(?:hazard\s*ratio)[,;:\s]*(\d+\.?\d*)[;,]\s*\d+\.?\d*%?\s*confidence\s*interval\s*\[?CI\]?[,:\s]*(\d+\.?\d*)\s*(?:to|-|–)\s*(\d+\.?\d*)/gi,
                 // v4.9.2: Oncology format - "hazard ratio for [outcome], X.XX; 95% CI X.XX to X.XX"
-                /(?:hazard\s*ratio)\s+(?:for\s+)?(?:death|progression|disease|survival)[^,]*,\s*(\d+\.?\d*)\s*[;,]?\s*(?:\(?\d+\.?\d*%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
+                /(?:hazard\s*ratio)\s+(?:for\s+)?(?:death|progression|disease|survival)[^,]*,\s*(\d+\.?\d*)\s*[;,]?\s*(?:\(?\d+\.?\d*%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
                 /(?:HR|hazard\s*ratio)[,;:\s=]+(\d+\.?\d*)/gi,
                 /(?:hazard\s+ratio\s+(?:of|was|=))\s*(\d+\.?\d*)/gi
             ],
             // Relative Risk (includes rate ratio for COVID trials)
             RR: [
-                /(?:RR|relative\s*risk)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
+                /(?:RR|relative\s*risk)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
                 /(?:RR|relative\s*risk)\s+(?:was|of|=)\s*(\d+\.?\d*)/gi,
                 /(?:relative\s*risk)[,;:\s=]+(\d+\.?\d*)/gi,
-                /(?:age-adjusted\s+)?(?:rate\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
-                /(?:rate\s*ratio)[,;:\s]+(?:for\s+\w+[,;:\s]+)?(\d+\.?\d*)[;,]\s*95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi
+                /(?:age-adjusted\s+)?(?:rate\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
+                /(?:rate\s*ratio)[,;:\s]+(?:for\s+\w+[,;:\s]+)?(\d+\.?\d*)[;,]\s*95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi
             ],
             // Rate Ratio (separate for trials like ACTT-1)
             RateRatio: [
-                /(?:rate\s*ratio\s+(?:for\s+)?(?:recovery|improvement|response))[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
-                /\(rate\s*ratio[,;:\s]*(\d+\.?\d*)\s*[;,]?\s*95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)\)/gi
+                /(?:rate\s*ratio\s+(?:for\s+)?(?:recovery|improvement|response))[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
+                /\(rate\s*ratio[,;:\s]*(\d+\.?\d*)\s*[;,]?\s*95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)\)/gi
             ],
             // Odds Ratio (includes adjusted OR, common OR)
             OR: [
@@ -108,9 +108,9 @@ const AIStrategies = {
                 // Pattern: "adjusted odds ratio, VALUE; 95% CI, A to B"
                 /adjusted\s*odds\s*ratio[,;:\s]*(\d+[·.]?\d*)\s*[;,]\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*(?:to|[-–])\s*(\d+[·.]?\d*)/gi,
                 // Original patterns
-                /(?:OR|odds\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
-                /(?:adjusted\s+)?(?:odds\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
-                /(?:common\s+)?(?:odds\s*ratio)[,;:\s]+(?:was|of|=)?\s*(\d+\.?\d*)\s*\(?95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
+                /(?:OR|odds\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
+                /(?:adjusted\s+)?(?:odds\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
+                /(?:common\s+)?(?:odds\s*ratio)[,;:\s]+(?:was|of|=)?\s*(\d+\.?\d*)\s*\(?95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
                 /(?:odds\s*ratio)(?:\s+\w+)*\s+(?:was|of|=)\s*(\d+\.?\d*)/gi,
                 /(?:odds\s*ratio|OR)[,;:\s=]+(\d+\.?\d*)/gi
             ],
@@ -197,8 +197,15 @@ const AIStrategies = {
 
                     // Extract CI if available
                     if (match[2] && match[3]) {
-                        result.ciLo = parseFloat(match[2]);
-                        result.ciHi = parseFloat(match[3]);
+                        let ciA = parseFloat(match[2]);
+                        let ciB = parseFloat(match[3]);
+                        // Normalize reversed bounds (lo>hi from a source typo) to
+                        // an ordered interval [lower, upper], mirroring the WebApp
+                        // surface, so a downstream SE can't get a negative
+                        // half-width (Math.log(ciHi)-Math.log(ciLo) < 0).
+                        if (isFinite(ciA) && isFinite(ciB) && ciA > ciB) { const t = ciA; ciA = ciB; ciB = t; }
+                        result.ciLo = ciA;
+                        result.ciHi = ciB;
 
                         // Calculate SE from CI bounds (for meta-analysis)
                         // SE = (ln(CI_upper) - ln(CI_lower)) / 3.92 for ratio measures

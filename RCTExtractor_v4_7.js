@@ -439,9 +439,9 @@ const RCTExtractor = {
         const patterns = {
             HR: [
                 // Flexible HR pattern for NEJM format: handles "hazard ratio in the X group, 0.79; 95% CI..."
-                /(?:HR|hazard\s*ratio)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)/gi,
+                /(?:HR|hazard\s*ratio)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+|,)\s*(-?\d+\.?\d*)/gi,
                 // NEW: Square bracket CI format: "HR 0.79 [0.65-0.95]" or "HR 0.79 [95% CI 0.65-0.95]"
-                /(?:HR|hazard\s*ratio)[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)\]/gi,
+                /(?:HR|hazard\s*ratio)[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+|,)\s*(-?\d+\.?\d*)\]/gi,
                 // Simple HR value: "HR 0.80" or "hazard ratio, 0.79"
                 /(?:HR|hazard\s*ratio)[,;:\s=]+(-?\d+\.?\d*)/gi,
                 // "hazard ratio of/was/= X"
@@ -449,21 +449,21 @@ const RCTExtractor = {
             ],
             RR: [
                 // Flexible RR pattern: handles "relative risk with dabigatran" or "in the X group"
-                /(?:RR|relative\s*risk)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)/gi,
+                /(?:RR|relative\s*risk)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+|,)\s*(-?\d+\.?\d*)/gi,
                 // NEW: Square bracket CI format: "RR 0.79 [0.65-0.95]"
-                /(?:RR|relative\s*risk)[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)\]/gi,
+                /(?:RR|relative\s*risk)[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+|,)\s*(-?\d+\.?\d*)\]/gi,
                 /(?:RR|relative\s*risk)\s+(?:was|of|=)\s*(-?\d+\.?\d*)/gi,
                 /(?:relative\s*risk)[,;:\s=]+(-?\d+\.?\d*)/gi,
                 // NEW: "risk ratio X.XX" separate from "relative risk"
-                /risk\s+ratio[,;:\s=]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)?[,;:\s]*)?(-?\d+\.?\d*)?\s*(?:[-–]|\s+to\s+)?\s*(-?\d+\.?\d*)?/gi,
+                /risk\s+ratio[,;:\s=]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)?[,;:\s]*)?(-?\d+\.?\d*)?\s*(?:[-–]|\s+to\s+|,)?\s*(-?\d+\.?\d*)?/gi,
                 // NEW: Risk ratio with square brackets
-                /risk\s+ratio[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)\]/gi
+                /risk\s+ratio[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+|,)\s*(-?\d+\.?\d*)\]/gi
             ],
             OR: [
                 // Flexible OR pattern: handles "odds ratio with X" or "in the X group"
-                /(?:OR|odds\s*ratio)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)/gi,
+                /(?:OR|odds\s*ratio)(?:\s+(?:with|for|in|of)(?:\s+the)?(?:\s+[\w-]+)+)?[,;:\s]+(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)(?:\s*\[CI\])?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+|,)\s*(-?\d+\.?\d*)/gi,
                 // NEW: Square bracket CI format: "OR 1.25 [0.95-1.65]"
-                /(?:OR|odds\s*ratio)[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)\]/gi,
+                /(?:OR|odds\s*ratio)[,;:\s=]*(-?\d+\.?\d*)\s*\[(?:95%?\s*(?:CI)?[,;:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+|,)\s*(-?\d+\.?\d*)\]/gi,
                 /(?:odds\s*ratio)(?:\s+\w+)*\s+(?:was|of|=)\s*(-?\d+\.?\d*)/gi,
                 /(?:odds\s*ratio|OR)[,;:\s=]+(-?\d+\.?\d*)/gi
             ],
@@ -520,7 +520,7 @@ const RCTExtractor = {
             ],
             RateRatio: [
                 // Rate ratio 0.72; 95% CI 0.58-0.89 or incidence rate ratio
-                /(?:rate\s*ratio|IRR|incidence\s*rate\s*ratio)[,;:\s=]*(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)[,:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+)\s*(-?\d+\.?\d*)/gi,
+                /(?:rate\s*ratio|IRR|incidence\s*rate\s*ratio)[,;:\s=]*(-?\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*(?:CI|confidence\s*interval)[,:\s]*)?(-?\d+\.?\d*)\s*(?:[-–]|\s+to\s+|,)\s*(-?\d+\.?\d*)/gi,
                 /(?:rate\s*ratio|IRR|incidence\s*rate\s*ratio)\s+(?:was|of|=)\s*(-?\d+\.?\d*)/gi
             ],
             NNT: [
@@ -580,8 +580,14 @@ const RCTExtractor = {
                     };
 
                     if (match[2] && match[3]) {
-                        result.ciLo = parseFloat(match[2]);
-                        result.ciHi = parseFloat(match[3]);
+                        let ciA = parseFloat(match[2]);
+                        let ciB = parseFloat(match[3]);
+                        // Normalize reversed bounds (lo>hi from a source typo) to
+                        // an ordered interval [lower, upper] so a downstream SE
+                        // can't get a negative half-width. Mirrors the WebApp.
+                        if (isFinite(ciA) && isFinite(ciB) && ciA > ciB) { const t = ciA; ciA = ciB; ciB = t; }
+                        result.ciLo = ciA;
+                        result.ciHi = ciB;
                     }
 
                     const start = Math.max(0, match.index - 50);

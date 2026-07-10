@@ -72,6 +72,13 @@ function ok(name, cond) {
     pass += cvotWeb.pass;
     fail += cvotWeb.fail;
 
+    // --- CI separator / ordering regressions (extract -> contrast) ---------
+    //   - comma-delimited CI ("95% CI 0.65, 0.85") captured (F1)
+    //   - reversed CI bounds reordered ascending (F4)
+    const ciSep = require('./tests/ci_separator_extraction.test.js').run();
+    pass += ciSep.pass;
+    fail += ciSep.fail;
+
     console.log('\n' + pass + ' passed, ' + fail + ' failed');
     process.exit(fail === 0 ? 0 : 1);
 })().catch((e) => { console.error('FATAL', e && e.stack ? e.stack : e); process.exit(1); });

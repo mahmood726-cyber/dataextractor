@@ -190,7 +190,7 @@ const result = extract(text, {
 });
 ```
 
-Full API documentation: [docs/API.md](https://github.com/rctextractor/rctextractor/blob/main/docs/API.md)
+Full API documentation: [`types.d.ts`](types.d.ts) (complete TypeScript type definitions for every exported function and result field).
 
 ---
 
