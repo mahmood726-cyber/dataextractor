@@ -56,6 +56,29 @@ function ok(name, cond) {
     logger.info(lib.AUDIT_EVENT_TYPES.EXTRACTION, 'ok');
     ok('AuditLogger records', logger.entries().length === 1);
 
+    // --- GLP-1 CVOT extraction regression suites ---------------------------
+    // (HARMONY / SELECT / SUSTAIN-6 / SOUL) across the three extraction
+    // surfaces that shared the bug classes:
+    //   - LocalAI.js MedicalNER pattern layer
+    const cvot = require('./tests/glp1_cvot_extraction.test.js').run();
+    pass += cvot.pass;
+    fail += cvot.fail;
+    //   - RCTExtractor_v4_8_AI.js main engine (age + ethnicity surfaces)
+    const cvotV48 = require('./tests/glp1_cvot_v48.test.js').run();
+    pass += cvotV48.pass;
+    fail += cvotV48.fail;
+    //   - RCTExtractor_WebApp.html standalone inline extractor
+    const cvotWeb = require('./tests/glp1_cvot_webapp.test.js').run();
+    pass += cvotWeb.pass;
+    fail += cvotWeb.fail;
+
+    // --- CI separator / ordering regressions (extract -> contrast) ---------
+    //   - comma-delimited CI ("95% CI 0.65, 0.85") captured (F1)
+    //   - reversed CI bounds reordered ascending (F4)
+    const ciSep = require('./tests/ci_separator_extraction.test.js').run();
+    pass += ciSep.pass;
+    fail += ciSep.fail;
+
     console.log('\n' + pass + ' passed, ' + fail + ' failed');
     process.exit(fail === 0 ? 0 : 1);
 })().catch((e) => { console.error('FATAL', e && e.stack ? e.stack : e); process.exit(1); });

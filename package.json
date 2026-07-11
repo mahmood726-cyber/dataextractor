@@ -17,62 +17,21 @@
       "require": "./pdf_extractor.js",
       "import": "./pdf_extractor.js"
     },
-    "./batch": {
-      "require": "./lib/batch.js",
-      "import": "./lib/batch.js"
-    },
-    "./lib": {
-      "require": "./lib/index.js",
-      "import": "./lib/index.js"
-    },
-    "./audit": {
-      "require": "./lib/audit.js",
-      "import": "./lib/audit.js"
-    },
     "./cli": "./extract_cli.js",
-    "./scraper": "./scraper/index.js",
-    "./graphql": {
-      "require": "./graphql/index.js",
-      "import": "./graphql/index.js"
-    },
-    "./websocket": {
-      "require": "./websocket/index.js",
-      "import": "./websocket/index.js"
-    },
-    "./websocket/client": {
-      "require": "./websocket/client.js",
-      "import": "./websocket/client.js"
-    },
     "./package.json": "./package.json"
   },
   "bin": {
     "rctextract": "./extract_cli.js",
-    "rct-pdf": "./pdf_extractor.js",
-    "rct-split": "./split_papers.js",
-    "rct-split-accurate": "./accurate_paper_splitter.js",
-    "rct-server": "./server/server.js",
-    "rct-scrape": "./scraper/scraper_cli.js",
-    "rct-graphql": "./graphql/server.js",
-    "rct-ws": "./websocket/ws_server.js"
+    "rct-pdf": "./pdf_extractor.js"
   },
   "scripts": {
     "test": "node run_tests.js",
+    "test:cvot": "node tests/glp1_cvot_extraction.test.js",
+    "test:cvot:v48": "node tests/glp1_cvot_v48.test.js",
+    "test:cvot:webapp": "node tests/glp1_cvot_webapp.test.js",
     "test:watch": "node --watch run_tests.js",
-    "test:server": "node tests/server.test.js",
-    "test:e2e": "node tests/e2e/run_all.js",
-    "test:e2e:pdf": "node tests/e2e/pdf_extraction.test.js",
-    "test:e2e:api": "node tests/e2e/api_server.test.js",
-    "test:e2e:cli": "node tests/e2e/cli.test.js",
-    "test:e2e:batch": "node tests/e2e/batch.test.js",
     "extract": "node extract_cli.js",
     "extract:pdf": "node pdf_extractor.js",
-    "split": "node split_papers.js",
-    "split:accurate": "node accurate_paper_splitter.js",
-    "validate": "node validation_v49.js",
-    "benchmark": "node benchmark_fields.js",
-    "server": "node server/server.js",
-    "server:dev": "node --watch server/server.js",
-    "server:prod": "NODE_ENV=production node server/server.js",
     "lint": "eslint . --ext .js --max-warnings 50",
     "format": "echo \"Add prettier for formatting\"",
     "typecheck": "tsc --noEmit",
@@ -80,15 +39,7 @@
     "prepublishOnly": "npm run test && npm run typecheck",
     "version": "npm run test",
     "help": "node extract_cli.js --help",
-    "help:pdf": "node pdf_extractor.js --help",
-    "help:split": "node split_papers.js --help",
-    "help:server": "echo 'RCTExtractor API Server - Run: npm run server'",
-    "scrape": "node scraper/scraper_cli.js",
-    "help:scrape": "node scraper/scraper_cli.js --help",
-    "graphql": "node graphql/server.js",
-    "graphql:dev": "node --watch graphql/server.js",
-    "graphql:prod": "NODE_ENV=production node graphql/server.js",
-    "help:graphql": "echo 'RCTExtractor GraphQL API - Run: npm run graphql'"
+    "help:pdf": "node pdf_extractor.js --help"
   },
   "keywords": [
     "rct",
@@ -165,16 +116,13 @@
     "LocalAI.js",
     "pdf_extractor.js",
     "extract_cli.js",
-    "split_papers.js",
-    "accurate_paper_splitter.js",
+    "lib.js",
+    "qc.js",
+    "viz.js",
     "types.d.ts",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md",
-    "server/",
-    "scraper/",
-    "lib/",
-    "graphql/"
+    "CHANGELOG.md"
   ],
   "sideEffects": false,
   "preferGlobal": true,

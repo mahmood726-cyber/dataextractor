@@ -142,9 +142,6 @@ npx rctextract --inputs "paper1.txt,paper2.txt" --output combined.json
 
 # PDF extraction
 npx rct-pdf input.pdf output.json
-
-# Split multi-paper documents
-npx rct-split --files "combined.txt" --output ./split_papers
 ```
 
 ### Web Application
@@ -193,7 +190,7 @@ const result = extract(text, {
 });
 ```
 
-Full API documentation: [docs/API.md](https://github.com/rctextractor/rctextractor/blob/main/docs/API.md)
+Full API documentation: [`types.d.ts`](types.d.ts) (complete TypeScript type definitions for every exported function and result field).
 
 ---
 

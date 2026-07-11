@@ -78,25 +78,25 @@ const AIStrategies = {
                 // Pattern: "hazard ratio was VALUE (95% CI, A-B)" - simple format
                 /hazard\s*ratio\s+was\s+(\d+[·.]?\d*)\s*\(\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*[-–]\s*(\d+[·.]?\d*)/gi,
                 // Original patterns - updated to support any CI percentage (97.5%, 99.5%, etc.)
-                /(?:HR|hazard\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?\d+\.?\d*%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
+                /(?:HR|hazard\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?\d+\.?\d*%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
                 /(?:hazard\s*ratio)[,;:\s]*(\d+\.?\d*)[;,]\s*\d+\.?\d*%?\s*confidence\s*interval\s*\[?CI\]?[,:\s]*(\d+\.?\d*)\s*(?:to|-|–)\s*(\d+\.?\d*)/gi,
                 // v4.9.2: Oncology format - "hazard ratio for [outcome], X.XX; 95% CI X.XX to X.XX"
-                /(?:hazard\s*ratio)\s+(?:for\s+)?(?:death|progression|disease|survival)[^,]*,\s*(\d+\.?\d*)\s*[;,]?\s*(?:\(?\d+\.?\d*%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
+                /(?:hazard\s*ratio)\s+(?:for\s+)?(?:death|progression|disease|survival)[^,]*,\s*(\d+\.?\d*)\s*[;,]?\s*(?:\(?\d+\.?\d*%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
                 /(?:HR|hazard\s*ratio)[,;:\s=]+(\d+\.?\d*)/gi,
                 /(?:hazard\s+ratio\s+(?:of|was|=))\s*(\d+\.?\d*)/gi
             ],
             // Relative Risk (includes rate ratio for COVID trials)
             RR: [
-                /(?:RR|relative\s*risk)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
+                /(?:RR|relative\s*risk)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
                 /(?:RR|relative\s*risk)\s+(?:was|of|=)\s*(\d+\.?\d*)/gi,
                 /(?:relative\s*risk)[,;:\s=]+(\d+\.?\d*)/gi,
-                /(?:age-adjusted\s+)?(?:rate\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
-                /(?:rate\s*ratio)[,;:\s]+(?:for\s+\w+[,;:\s]+)?(\d+\.?\d*)[;,]\s*95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi
+                /(?:age-adjusted\s+)?(?:rate\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
+                /(?:rate\s*ratio)[,;:\s]+(?:for\s+\w+[,;:\s]+)?(\d+\.?\d*)[;,]\s*95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi
             ],
             // Rate Ratio (separate for trials like ACTT-1)
             RateRatio: [
-                /(?:rate\s*ratio\s+(?:for\s+)?(?:recovery|improvement|response))[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
-                /\(rate\s*ratio[,;:\s]*(\d+\.?\d*)\s*[;,]?\s*95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)\)/gi
+                /(?:rate\s*ratio\s+(?:for\s+)?(?:recovery|improvement|response))[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
+                /\(rate\s*ratio[,;:\s]*(\d+\.?\d*)\s*[;,]?\s*95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)\)/gi
             ],
             // Odds Ratio (includes adjusted OR, common OR)
             OR: [
@@ -108,9 +108,9 @@ const AIStrategies = {
                 // Pattern: "adjusted odds ratio, VALUE; 95% CI, A to B"
                 /adjusted\s*odds\s*ratio[,;:\s]*(\d+[·.]?\d*)\s*[;,]\s*\d+[·.]?\d*%?\s*CI[,:\s]*(\d+[·.]?\d*)\s*(?:to|[-–])\s*(\d+[·.]?\d*)/gi,
                 // Original patterns
-                /(?:OR|odds\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
-                /(?:adjusted\s+)?(?:odds\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
-                /(?:common\s+)?(?:odds\s*ratio)[,;:\s]+(?:was|of|=)?\s*(\d+\.?\d*)\s*\(?95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to]+\s*(\d+\.?\d*)/gi,
+                /(?:OR|odds\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
+                /(?:adjusted\s+)?(?:odds\s*ratio)[,;:\s=]*(\d+\.?\d*)\s*[;,]?\s*(?:\(?95%?\s*CI[,:\s]*)?(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
+                /(?:common\s+)?(?:odds\s*ratio)[,;:\s]+(?:was|of|=)?\s*(\d+\.?\d*)\s*\(?95%?\s*CI[,:\s]*(\d+\.?\d*)\s*[-–to,]+\s*(\d+\.?\d*)/gi,
                 /(?:odds\s*ratio)(?:\s+\w+)*\s+(?:was|of|=)\s*(\d+\.?\d*)/gi,
                 /(?:odds\s*ratio|OR)[,;:\s=]+(\d+\.?\d*)/gi
             ],
@@ -197,8 +197,15 @@ const AIStrategies = {
 
                     // Extract CI if available
                     if (match[2] && match[3]) {
-                        result.ciLo = parseFloat(match[2]);
-                        result.ciHi = parseFloat(match[3]);
+                        let ciA = parseFloat(match[2]);
+                        let ciB = parseFloat(match[3]);
+                        // Normalize reversed bounds (lo>hi from a source typo) to
+                        // an ordered interval [lower, upper], mirroring the WebApp
+                        // surface, so a downstream SE can't get a negative
+                        // half-width (Math.log(ciHi)-Math.log(ciLo) < 0).
+                        if (isFinite(ciA) && isFinite(ciB) && ciA > ciB) { const t = ciA; ciA = ciB; ciB = t; }
+                        result.ciLo = ciA;
+                        result.ciHi = ciB;
 
                         // Calculate SE from CI bounds (for meta-analysis)
                         // SE = (ln(CI_upper) - ln(CI_lower)) / 3.92 for ratio measures
@@ -3086,20 +3093,44 @@ summary(res_mod)
 
         // Age patterns (handles years and months for pediatric)
         // v4.9.3: Priority order - most specific patterns first
+        // BUGFIX (GLP-1 CVOT pass, 2026-06-10): the old "general" fallback
+        //   /(?:mean\s+)?age[^\d]*(\d+)(?:±|years?)/
+        // matched the ELIGIBILITY FLOOR in "patients aged 50 years or older"
+        // (the "d" of "aged" is consumed by [^\d]) and reported 50 as the mean
+        // age. This mirrors the HARMONY/SUSTAIN-6/SOUL "minimum age taken as
+        // age range" bug already fixed in LocalAI.js (MedicalNER.extractAge).
+        // The fallback now (a) demands a true mean/median/average qualifier OR
+        // an explicit "X +/- SD years" form, and (b) the value must NOT be an
+        // eligibility floor ("X years or older", ">=X", "X and older/above").
+        // Tolerates a European decimal comma in the value (parsed below).
         const ageMatch =
                          // v4.9.3: "Median age was X years" (prioritize before general pattern)
-                         text.match(/(?:median|mean)\s+age\s+(?:was\s+)?(\d+(?:\.\d+)?)\s*years?/i) ||
-                         // General: "Mean age was 66.3 years" or "age 58 years"
-                         text.match(/(?:mean\s+)?age[^\d]*(\d+(?:\.\d+)?)\s*(?:±|\+\/?-|years?)/i) ||
-                         // SD format: "66.3 ± 11.0 years"
-                         text.match(/(\d+(?:\.\d+)?)\s*(?:±|\+\/?-)\s*(\d+(?:\.\d+)?)\s*years?/i) ||
-                         // v4.9.2: Pediatric - "Median age was X.X months"
-                         text.match(/(?:median\s+)?age\s+(?:was\s+)?(\d+(?:\.\d+)?)\s*months?/i);
-        if (ageMatch) {
-            population.ageMean = parseFloat(ageMatch[1]);
+                         text.match(/(?:median|mean|average)\s+age\s+(?:was\s+|of\s+|,\s*)?(\d+(?:[.,]\d+)?)\s*(?:±|\+\/?-|\(|years?|y\b|yrs?)/i) ||
+                         // SD format: "66.3 ± 11.0 years" (a bare value with an SD is a summary stat, not a floor)
+                         text.match(/(\d+(?:[.,]\d+)?)\s*(?:±|\+\/?-)\s*(\d+(?:[.,]\d+)?)\s*years?/i) ||
+                         // v4.9.2: Pediatric - "Median/mean age was X.X months"
+                         text.match(/(?:median|mean|average)\s+age\s+(?:was\s+)?(\d+(?:[.,]\d+)?)\s*months?/i);
+        // Reject if the matched number is actually an eligibility minimum.
+        const ageIsEligibilityFloor = (m) => {
+            if (!m) return false;
+            const idx = (m.index || 0);
+            const around = text.slice(Math.max(0, idx - 12), Math.min(text.length, idx + m[0].length + 18)).toLowerCase();
+            return /(?:>=|≥|or\s+(?:older|above)|and\s+(?:older|above)|at\s+least|or\s+more)/.test(around);
+        };
+        if (ageMatch && !ageIsEligibilityFloor(ageMatch)) {
+            population.ageMean = parseFloat(String(ageMatch[1]).replace(',', '.'));
             if (ageMatch[2]) {
-                population.ageSD = parseFloat(ageMatch[2]);
+                population.ageSD = parseFloat(String(ageMatch[2]).replace(',', '.'));
             }
+        }
+
+        // Race / ethnicity breakdown. Reuses the audited MedicalNER.extractEthnicity
+        // helper from LocalAI.js (added in the GLP-1 CVOT fix) so the v4_8 engine
+        // and the LocalAI pattern layer agree. Returns an object like
+        // { white: 84, asian: 8, black: 4 } or null ("not reported") — the field
+        // is NEVER populated with a substituted nearby number.
+        if (typeof MedicalNER !== 'undefined' && typeof MedicalNER.extractEthnicity === 'function') {
+            population.ethnicity = MedicalNER.extractEthnicity(text);
         }
 
         return population;
